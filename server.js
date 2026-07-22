@@ -7,41 +7,108 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-// 存储快照
-let previousSnapshot = null;
+// ========== 存储结构 ==========
+let oddsHistory = new Map();
 
-app.post('/api/compare', (req, res) => {
+// ========== 接收前端发来的赔率数据，自动对比并存储 ==========
+app.post('/api/save', (req, res) => {
   try {
-    const currentData = req.body;
-    if (!currentData || !Array.isArray(currentData)) {
-      return res.json({ success: false });
+    const { matches } = req.body;
+    if (!matches || !Array.isArray(matches)) {
+      return res.json({ success: false, message: '数据格式错误' });
     }
-    previousSnapshot = JSON.parse(JSON.stringify(currentData));
-    console.log('快照已更新，比赛数:', currentData.length);
-    res.json({ success: true, isFirstTime: false });
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('zh-CN', { hour12: false });
+    const dateStr = now.toLocaleDateString('zh-CN');
+    const fullTime = dateStr + ' ' + timeStr;
+
+    const pools = ['had', 'hhad', 'crs', 'ttg', 'hafu'];
+    let totalChanges = 0;
+
+    matches.forEach(match => {
+      const matchId = String(match.id);
+      
+      if (!oddsHistory.has(matchId)) {
+        oddsHistory.set(matchId, { _info: null, had: [], hhad: [], crs: [], ttg: [], hafu: [] });
+      }
+      
+      const history = oddsHistory.get(matchId);
+
+      // 保存比赛信息
+      history._info = {
+        home: match.home || '',
+        away: match.away || '',
+        homeRank: match.homeRank || '',
+        awayRank: match.awayRank || '',
+        time: match.time || '',
+        matchNum: match.matchNum || '',
+        league: match.league || '',
+        leagueAllName: match.leagueAllName || '',
+        leagueCode: match.leagueCode || '',
+        hhadGoalLine: match.hhadGoalLine || '',
+        hhadGoalLineValue: match.hhadGoalLineValue || ''
+      };
+
+      // 保存每个玩法的赔率
+      pools.forEach(pool => {
+        if (!match.odds || !match.odds[pool]) return;
+        const oddsData = { ...match.odds[pool] };
+        oddsData._time = fullTime;
+        oddsData._timestamp = now.getTime();
+
+        // 检查是否与上一次相同
+        const poolHistory = history[pool];
+        if (poolHistory.length > 0) {
+          const last = poolHistory[0];
+          let same = true;
+          Object.keys(oddsData).forEach(k => {
+            if (k !== '_time' && k !== '_timestamp' && oddsData[k] !== last[k]) {
+              same = false;
+            }
+          });
+          if (same) return;
+        }
+
+        poolHistory.unshift(oddsData);
+        totalChanges++;
+      });
+    });
+
+    console.log(`📝 已保存，${totalChanges} 项变化`);
+    res.json({ success: true, totalChanges, history: getFullHistory() });
   } catch (e) {
     res.json({ success: false, message: e.message });
   }
 });
 
-app.get('/api/status', (req, res) => {
-  res.json({ matchCount: previousSnapshot ? previousSnapshot.length : 0 });
+// ========== 获取完整历史 ==========
+app.get('/api/history', (req, res) => {
+  res.json({ success: true, history: getFullHistory() });
 });
 
-// 捕获所有其他请求返回 index.html
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+// ========== 重置 ==========
+app.post('/api/reset', (req, res) => {
+  oddsHistory.clear();
+  res.json({ success: true });
 });
 
-// 关键：必须监听 0.0.0.0，使用 Railway 分配的端口
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log('Server running on port ' + PORT);
-});
+function getFullHistory() {
+  const summary = [];
+  oddsHistory.forEach((data, matchId) => {
+    summary.push({
+      matchId,
+      info: data._info || {},
+      had: data.had || [],
+      hhad: data.hhad || [],
+      crs: data.crs || [],
+      ttg: data.ttg || [],
+      hafu: data.hafu || []
+    });
+  });
+  return summary;
+}
 
-// 捕获未处理的错误，防止崩溃
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err.message);
-});
-process.on('unhandledRejection', (reason) => {
-  console.error('Unhandled Rejection:', reason);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ 服务器已启动: http://localhost:${PORT}`);
 });
