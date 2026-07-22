@@ -3,74 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>竞彩实时赔率 · 全玩法差额监控</title>
+  <title>竞彩实时赔率 · 差额监控</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #f0f2f5;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      min-height: 100vh;
-      padding: 12px;
-    }
+    body { background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; padding: 12px; }
     .container { max-width: 1400px; margin: 0 auto; }
 
     .header {
       background: linear-gradient(135deg, #0b2b5e 0%, #1a4a8b 100%);
-      border-radius: 16px;
-      padding: 18px 20px;
-      margin-bottom: 14px;
-      color: white;
-      box-shadow: 0 8px 24px rgba(11,43,94,0.25);
-      position: sticky;
-      top: 12px;
-      z-index: 100;
+      border-radius: 16px; padding: 18px 20px; margin-bottom: 14px;
+      color: white; box-shadow: 0 8px 24px rgba(11,43,94,0.25);
+      position: sticky; top: 12px; z-index: 100;
     }
     .header h1 { font-size: 1.3rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .header h1 span { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
     .info-bar { display: flex; justify-content: space-between; margin-top: 10px; flex-wrap: wrap; gap: 8px; }
     .date-badge { background: #ffd966; color: #0b2b5e; font-weight: 700; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; }
     .status-badge { background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); padding: 6px 16px; border-radius: 20px; display: flex; align-items: center; gap: 6px; font-size: 0.8rem; }
-    .live-dot { width: 8px; height: 8px; background: #2ecc71; border-radius: 50%; animation: pulse 1.6s infinite; }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; animation: pulse 1.6s infinite; }
+    .dot-ok { background: #2ecc71; } .dot-mock { background: #f59e0b; }
     @keyframes pulse { 0%,100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.5); } }
 
     .controls { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
     .btn { padding: 8px 16px; border-radius: 20px; border: 1px solid #d1d5db; background: white; font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
     .btn:hover { background: #eef2ff; border-color: #1a4a8b; }
     .btn-primary { background: #0b2b5e; color: white; border: none; }
-    .btn:active { transform: scale(0.96); }
     .legend { margin-left: auto; display: flex; gap: 12px; background: white; padding: 6px 14px; border-radius: 20px; font-size: 0.7rem; }
-    .up { color: #dc2626; font-weight: 700; }
-    .down { color: #16a34a; font-weight: 700; }
-    .flat { color: #6b7280; }
+    .up { color: #dc2626; font-weight: 700; } .down { color: #16a34a; font-weight: 700; } .flat { color: #6b7280; }
 
-    .toast {
-      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-      background: #0f172a; color: white; padding: 10px 24px; border-radius: 30px;
-      font-size: 0.85rem; font-weight: 600; z-index: 9999;
-      opacity: 0; transition: opacity 0.3s ease; pointer-events: none;
-    }
-    .toast.show { opacity: 1; }
+    .data-source-tag { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 0.65rem; font-weight: 700; margin-left: 6px; }
+    .source-real { background: #dcfce7; color: #16a34a; } .source-mock { background: #fef3c7; color: #92400e; }
 
-    .match-card {
-      background: white;
-      border-radius: 14px;
-      margin-bottom: 10px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.04);
-      border: 1px solid #eef1f6;
-      overflow: hidden;
-      transition: border-color 0.3s;
-    }
+    .match-card { background: white; border-radius: 14px; margin-bottom: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.04); border: 1px solid #eef1f6; overflow: hidden; transition: border-color 0.3s; }
     .match-card.updated { border-color: #f59e0b; }
-    .match-header {
-      display: flex; align-items: center; padding: 14px 16px; gap: 12px;
-      cursor: pointer; user-select: none; flex-wrap: wrap;
-    }
+    .match-header { display: flex; align-items: center; padding: 14px 16px; gap: 12px; cursor: pointer; user-select: none; flex-wrap: wrap; }
     .match-header:hover { background: #fafbfc; }
     .expand-icon { font-size: 0.7rem; color: #94a3b8; transition: 0.3s; min-width: 16px; text-align: center; }
     .expand-icon.open { transform: rotate(90deg); }
     .league-tag { font-size: 0.65rem; color: #fff; font-weight: 700; padding: 3px 8px; border-radius: 4px; white-space: nowrap; }
-    .league-KD1 { background: #2563eb; }
-    .league-UCL { background: #7c3aed; }
+    .league-KD1 { background: #2563eb; } .league-UCL { background: #7c3aed; }
     .teams { font-weight: 700; font-size: 0.95rem; flex: 1; min-width: 160px; }
     .teams .vs { color: #94a3b8; margin: 0 6px; font-weight: 400; }
     .team-rank { font-size: 0.65rem; color: #94a3b8; font-weight: 400; }
@@ -80,124 +51,64 @@
 
     .pools-panel { display: none; border-top: 1px solid #f1f5f9; background: #fafbfc; }
     .pools-panel.open { display: block; }
-
     .pool-tabs { display: flex; gap: 0; border-bottom: 2px solid #e2e8f0; overflow-x: auto; padding: 0 8px; }
     .pool-tab { padding: 10px 14px; font-size: 0.75rem; font-weight: 600; color: #64748b; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: 0.2s; background: none; border-top: none; border-left: none; border-right: none; }
     .pool-tab.active { color: #0b2b5e; border-bottom-color: #0b2b5e; }
-    .pool-tab:hover { color: #1a4a8b; }
 
     .pool-content { display: none; padding: 12px 16px; }
     .pool-content.active { display: block; }
     .odds-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-    .odds-table th { background: #f1f5f9; padding: 8px 10px; text-align: center; font-weight: 600; color: #475569; font-size: 0.7rem; white-space: nowrap; }
+    .odds-table th { background: #f1f5f9; padding: 8px 10px; text-align: center; font-weight: 600; color: #475569; font-size: 0.7rem; }
     .odds-table td { padding: 8px 10px; text-align: center; border-bottom: 1px solid #f8fafc; }
-    .odds-table .odd-val { font-weight: 700; font-size: 0.9rem; color: #0f172a; transition: all 0.3s; }
-    .odds-table .odd-val.changed { animation: highlightChange 0.8s ease; }
-    @keyframes highlightChange {
-      0% { color: #f59e0b; transform: scale(1.15); }
-      100% { color: #0f172a; transform: scale(1); }
-    }
-    .diff-tag { font-size: 0.65rem; font-weight: 700; padding: 1px 6px; border-radius: 10px; display: inline-block; transition: all 0.3s; }
-    .diff-up { color: #dc2626; background: #fef2f2; }
-    .diff-down { color: #16a34a; background: #f0fdf4; }
-    .diff-zero { color: #94a3b8; }
-    .diff-tag.new-change { animation: popIn 0.5s ease; }
-    @keyframes popIn {
-      0% { transform: scale(1.8); opacity: 0.5; }
-      100% { transform: scale(1); opacity: 1; }
-    }
+    .odd-val { font-weight: 700; font-size: 0.9rem; color: #0f172a; transition: all 0.3s; }
+    .odd-val.changed { animation: highlightChange 0.8s ease; }
+    @keyframes highlightChange { 0% { color: #f59e0b; transform: scale(1.15); } 100% { color: #0f172a; transform: scale(1); } }
+    .diff-tag { font-size: 0.65rem; font-weight: 700; padding: 1px 6px; border-radius: 10px; display: inline-block; }
+    .diff-up { color: #dc2626; background: #fef2f2; } .diff-down { color: #16a34a; background: #f0fdf4; } .diff-zero { color: #94a3b8; }
     .handicap-info { font-size: 0.65rem; color: #64748b; background: #fefce8; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
 
-    /* 比分网格 */
-    .crs-grid {
-      display: grid;
-      gap: 6px;
-      padding: 8px 0;
-    }
-    .crs-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 6px 10px;
-      background: #fff;
-      border-radius: 8px;
-      font-size: 0.75rem;
-      border: 1px solid #f1f5f9;
-      transition: all 0.2s;
-    }
-    .crs-item:hover { border-color: #cbd5e1; }
-    .crs-score { font-weight: 700; min-width: 40px; }
-    .crs-score.other { color: #7c3aed; font-size: 0.7rem; }
-    .crs-val { font-weight: 700; min-width: 45px; text-align: right; }
-    .crs-diff { min-width: 40px; text-align: center; }
-    .crs-section-title {
-      grid-column: 1 / -1;
-      font-size: 0.65rem;
-      font-weight: 700;
-      color: #64748b;
-      padding: 4px 0 2px;
-      border-bottom: 1px solid #e2e8f0;
-      margin-bottom: 2px;
-    }
+    .crs-grid { display: grid; gap: 6px; padding: 8px 0; }
+    .crs-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #fff; border-radius: 8px; font-size: 0.75rem; border: 1px solid #f1f5f9; }
+    .crs-score { font-weight: 700; min-width: 35px; } .crs-score.other { color: #7c3aed; }
+    .crs-val { font-weight: 700; min-width: 42px; text-align: right; }
+    .crs-diff { min-width: 38px; text-align: center; }
+    .crs-section-title { grid-column: 1 / -1; font-size: 0.65rem; font-weight: 700; color: #64748b; padding: 4px 0 2px; border-bottom: 1px solid #e2e8f0; margin-bottom: 2px; }
 
     .no-data { text-align: center; padding: 20px; color: #94a3b8; font-size: 0.8rem; }
-
-    .auto-refresh-bar {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      margin-top: 12px; font-size: 0.7rem; color: #94a3b8;
-    }
+    .auto-refresh-bar { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; font-size: 0.7rem; color: #94a3b8; }
     .countdown { font-weight: 700; color: #64748b; min-width: 30px; text-align: center; }
 
     @media (max-width: 600px) {
-      .match-header { padding: 10px 12px; }
-      .teams { font-size: 0.85rem; }
-      .pool-tab { padding: 8px 10px; font-size: 0.7rem; }
-      .odds-table { font-size: 0.7rem; }
-      .odds-table th, .odds-table td { padding: 6px 6px; }
-      .crs-item { padding: 4px 6px; font-size: 0.7rem; }
-      .header { border-radius: 0 0 16px 16px; position: sticky; top: 0; }
+      .match-header { padding: 10px 12px; } .teams { font-size: 0.85rem; }
+      .pool-tab { padding: 8px 10px; font-size: 0.7rem; } .crs-item { padding: 4px 6px; font-size: 0.7rem; }
     }
   </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <h1>⚽ 竞彩足球·全玩法赔率 <span>差额监控</span></h1>
+    <h1>⚽ 竞彩足球·全玩法赔率 <span>差额监控</span><span class="data-source-tag" id="sourceTag">加载中</span></h1>
     <div class="info-bar">
       <div class="date-badge" id="displayDate">📅 加载中</div>
-      <div class="status-badge">
-        <span class="live-dot" id="statusDot"></span>
-        <span id="statusText">连接中</span>
-      </div>
+      <div class="status-badge"><span class="live-dot" id="statusDot"></span><span id="statusText">连接中</span></div>
     </div>
   </div>
 
   <div class="controls">
-    <button class="btn" onclick="fetchData()">🌐 刷新数据</button>
+    <button class="btn" onclick="fetchAndCompare()">🌐 刷新对比</button>
     <button class="btn btn-primary" onclick="simulateChange()">📊 模拟波动</button>
     <button class="btn" onclick="resetBaseline()">🔄 重置差额</button>
     <button class="btn" onclick="toggleAutoRefresh()" id="autoBtn">⏸️ 暂停</button>
-    <div class="legend">
-      <span>🔴<span class="up">▲涨</span></span>
-      <span>🟢<span class="down">▼跌</span></span>
-      <span>⚪持平</span>
-    </div>
+    <div class="legend"><span>🔴<span class="up">▲涨</span></span><span>🟢<span class="down">▼跌</span></span><span>⚪持平</span></div>
   </div>
 
   <div id="matchesContainer"></div>
-
-  <div class="auto-refresh-bar">
-    <span>自动刷新：</span>
-    <span class="countdown" id="countdown">60</span>
-    <span>秒</span>
-  </div>
+  <div class="auto-refresh-bar"><span>自动刷新：</span><span class="countdown" id="countdown">60</span><span>秒</span></div>
   <div style="text-align:center;font-size:0.65rem;color:#94a3b8;margin-top:4px;" id="lastUpdateTime"></div>
 </div>
 
-<div class="toast" id="toast"></div>
-
 <script>
-  // ========== 状态 ==========
+  // ========== 全局状态 ==========
   let matches = [];
   let previousOdds = new Map();
   let autoRefreshEnabled = true;
@@ -210,390 +121,297 @@
   const HAD_LABELS = { h: '胜', d: '平', a: '负' };
   const HAFU_LABELS = { hh: '胜胜', hd: '胜平', ha: '胜负', dh: '平胜', dd: '平平', da: '平负', ah: '负胜', ad: '负平', aa: '负负' };
   const TTG_LABELS = { s0: '0球', s1: '1球', s2: '2球', s3: '3球', s4: '4球', s5: '5球', s6: '6球', s7: '7+球' };
+  const CRS_KEYS_ALL = ['s00s00','s00s01','s00s02','s00s03','s00s04','s00s05','s01s00','s01s01','s01s02','s01s03','s01s04','s01s05','s02s00','s02s01','s02s02','s02s03','s02s04','s02s05','s03s00','s03s01','s03s02','s03s03','s04s00','s04s01','s04s02','s05s00','s05s01','s05s02','s1sh','s1sd','s1sa'];
 
-  // ========== 完整比分映射 ==========
-  // 所有31个比分选项，按API字段名映射到显示名称
-  const CRS_KEYS_ALL = [
-    's00s00','s00s01','s00s02','s00s03','s00s04','s00s05',
-    's01s00','s01s01','s01s02','s01s03','s01s04','s01s05',
-    's02s00','s02s01','s02s02','s02s03','s02s04','s02s05',
-    's03s00','s03s01','s03s02','s03s03',
-    's04s00','s04s01','s04s02',
-    's05s00','s05s01','s05s02',
-    's1sh','s1sd','s1sa'
-  ];
-
-  // 比分显示标签（带+号表示"或以上"）
-  function getScoreLabel(key) {
-    const map = {
-      's00s00': '0:0',   's00s01': '0:1',   's00s02': '0:2',   's00s03': '0:3',  's00s04': '0:4',  's00s05': '0:5',
-      's01s00': '1:0',   's01s01': '1:1',   's01s02': '1:2',   's01s03': '1:3',  's01s04': '1:4',  's01s05': '1:5',
-      's02s00': '2:0',   's02s01': '2:1',   's02s02': '2:2',   's02s03': '2:3',  's02s04': '2:4',  's02s05': '2:5',
-      's03s00': '3:0',  's03s01': '3:1',  's03s02': '3:2',  's03s03': '3:3',
-      's04s00': '4:0',  's04s01': '4:1',  's04s02': '4:2',
-      's05s00': '5:0',  's05s01': '5:1',  's05s02': '5:2',
-      's1sh': '胜其他',   's1sd': '平其他',   's1sa': '负其他'
-    };
-    return map[key] || key;
+  function getScoreLabel(k) {
+    const m = {'s00s00':'0:0','s00s01':'0:1','s00s02':'0:2','s00s03':'0:3','s00s04':'0:4','s00s05':'0:5','s01s00':'1:0','s01s01':'1:1','s01s02':'1:2','s01s03':'1:3','s01s04':'1:4','s01s05':'1:5','s02s00':'2:0','s02s01':'2:1','s02s02':'2:2','s02s03':'2:3','s02s04':'2:4','s02s05':'2:5','s03s00':'3:0','s03s01':'3:1','s03s02':'3:2','s03s03':'3:3','s04s00':'4:0','s04s01':'4:1','s04s02':'4:2','s05s00':'5:0','s05s01':'5:1','s05s02':'5:2','s1sh':'胜其他','s1sd':'平其他','s1sa':'负其他'};
+    return m[k] || k;
+  }
+  function getScoreGroup(k) {
+    if (k==='s1sh') return 'other_win'; if (k==='s1sd') return 'other_draw'; if (k==='s1sa') return 'other_lose';
+    if (k==='s00s00') return 'draw';
+    const r = k.match(/s(\d+)s(\d+)/); if (!r) return 'other';
+    const h=parseInt(r[1]), a=parseInt(r[2]);
+    if (h>a) return 'win'; if (h<a) return 'lose'; return 'draw';
+  }
+  function getPoolKeys(p) {
+    if (p==='had'||p==='hhad') return ['h','d','a'];
+    if (p==='hafu') return ['hh','hd','ha','dh','dd','da','ah','ad','aa'];
+    if (p==='ttg') return ['s0','s1','s2','s3','s4','s5','s6','s7'];
+    return CRS_KEYS_ALL;
   }
 
-  // 比分分组：主胜、平局、客胜、其他
-  function getScoreGroup(key) {
-    if (['s1sh'].includes(key)) return 'other_win';
-    if (['s1sd'].includes(key)) return 'other_draw';
-    if (['s1sa'].includes(key)) return 'other_lose';
-    // s00s00 是平局
-    if (key === 's00s00') return 'draw';
-    // 比较主客进球数
-    const match = key.match(/s(\d+)s(\d+)/);
-    if (!match) return 'other';
-    const h = parseInt(match[1]);
-    const a = parseInt(match[2]);
-    if (h > a) return 'win';
-    if (h < a) return 'lose';
-    return 'draw';
-  }
+  function showToast(msg, d=2000) { const t=document.getElementById('toast')||(document.body.appendChild(Object.assign(document.createElement('div'),{id:'toast'})),document.getElementById('toast')); t.textContent=msg; t.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 24px;border-radius:30px;font-size:0.85rem;font-weight:600;z-index:9999;opacity:1;transition:opacity 0.3s'; clearTimeout(t._t); t._t=setTimeout(()=>t.style.opacity='0',d); }
 
-  // ========== Toast ==========
-  function showToast(msg, duration = 2000) {
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.classList.add('show');
-    clearTimeout(toast._timeout);
-    toast._timeout = setTimeout(() => toast.classList.remove('show'), duration);
-  }
-
-  // ========== 倒计时 ==========
   function startCountdown() {
-    countdownValue = REFRESH_INTERVAL;
-    updateCountdownDisplay();
-    clearInterval(window._cdTimer);
-    window._cdTimer = setInterval(() => {
-      countdownValue--;
-      updateCountdownDisplay();
-      if (countdownValue <= 0) {
-        countdownValue = REFRESH_INTERVAL;
-        if (autoRefreshEnabled) fetchData(true);
-      }
-    }, 1000);
+    countdownValue=REFRESH_INTERVAL; updateCountdownDisplay();
+    clearInterval(window._cd);
+    window._cd=setInterval(()=>{ countdownValue--; updateCountdownDisplay(); if(countdownValue<=0){ countdownValue=REFRESH_INTERVAL; if(autoRefreshEnabled) fetchAndCompare(true); } },1000);
+  }
+  function updateCountdownDisplay() { const e=document.getElementById('countdown'); if(e) e.textContent=countdownValue; }
+  function toggleAutoRefresh() { autoRefreshEnabled=!autoRefreshEnabled; document.getElementById('autoBtn').textContent=autoRefreshEnabled?'⏸️ 暂停':'▶️ 开启'; showToast(autoRefreshEnabled?'✅ 自动刷新已开启':'⏸️ 已暂停'); }
+  function getToday() { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+
+  function setDataSource(real) {
+    const tag=document.getElementById('sourceTag'), dot=document.getElementById('statusDot');
+    if(real){ tag.textContent='实时数据'; tag.className='data-source-tag source-real'; dot.className='live-dot dot-ok'; }
+    else { tag.textContent='模拟数据'; tag.className='data-source-tag source-mock'; dot.className='live-dot dot-mock'; }
   }
 
-  function updateCountdownDisplay() {
-    const el = document.getElementById('countdown');
-    if (el) el.textContent = countdownValue;
-  }
+  // ========== 核心：获取数据 + 后端对比 ==========
+  async function fetchAndCompare(silent=false) {
+    if(!silent) document.getElementById('statusText').textContent='⏳ 获取中...';
 
-  function toggleAutoRefresh() {
-    autoRefreshEnabled = !autoRefreshEnabled;
-    const btn = document.getElementById('autoBtn');
-    btn.textContent = autoRefreshEnabled ? '⏸️ 暂停' : '▶️ 开启';
-    showToast(autoRefreshEnabled ? '✅ 自动刷新已开启' : '⏸️ 自动刷新已暂停');
-  }
-
-  // ========== 数据获取 ==========
-  async function fetchData(silent = false) {
-    if (!silent) document.getElementById('statusText').textContent = '⏳ 更新中...';
+    // 1. 获取原始数据
+    let rawData = null;
     try {
-      const response = await fetch(`/api/lottery/zqspf?_=${Date.now()}`);
-      const result = await response.json();
-      if (result && result.success && result.value) {
-        const newMatches = parseMatches(result.value);
-        if (!matches.length) {
-          matches = newMatches;
-          saveSnapshot();
-          renderMatches();
-        } else {
-          updateMatchesInPlace(newMatches);
-        }
-        document.getElementById('statusText').textContent = '✅ 实时';
-        document.getElementById('lastUpdateTime').textContent = '更新：' + new Date().toLocaleTimeString('zh-CN');
-        if (!silent) showToast('✅ 数据已更新');
-        countdownValue = REFRESH_INTERVAL;
-      }
-    } catch (err) {
-      document.getElementById('statusText').textContent = '❌ 失败';
-      if (!silent) showToast('❌ 获取失败');
+      const resp = await fetch('https://webapi.sporttery.cn/gateway/uniform/football/getMatchCalculatorV1.qry?channel=c&_='+Date.now(), {
+        headers: { 'Accept': 'application/json', 'Referer': 'https://www.sporttery.cn/' }
+      });
+      if(resp.ok) rawData = await resp.json();
+    } catch(e) { console.warn('API请求失败:', e.message); }
+
+    // 2. 解析数据
+    if(rawData && rawData.success && rawData.value) {
+      matches = parseMatches(rawData.value);
+      setDataSource(true);
+      if(!silent) showToast('✅ 实时数据已获取');
+    } else {
+      if(!matches.length) loadMockData();
+      setDataSource(false);
+      if(!silent) showToast('⚠️ 使用模拟数据');
     }
-    document.getElementById('displayDate').textContent = '📅 ' + getToday();
+
+    // 3. 发送到后端对比
+    try {
+      const payload = matches.map(m => ({ id: m.id, odds: m.odds }));
+      const resp = await fetch('/api/compare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const result = await resp.json();
+
+      if(result.success && !result.isFirstTime) {
+        // 应用差额到内存
+        applyDiffsFromServer(result.diffs);
+      } else if(result.success && result.isFirstTime) {
+        // 首次：保存快照，差额为0
+        saveSnapshot();
+      }
+    } catch(e) {
+      console.warn('后端对比失败:', e.message);
+      // 降级：本地计算差额
+      if(previousOdds.size === 0) saveSnapshot();
+    }
+
+    // 4. 渲染
+    renderMatches();
+    document.getElementById('statusText').textContent='✅ 实时';
+    document.getElementById('lastUpdateTime').textContent='更新：'+new Date().toLocaleTimeString('zh-CN');
+    document.getElementById('displayDate').textContent='📅 '+getToday();
+    countdownValue=REFRESH_INTERVAL;
+  }
+
+  function applyDiffsFromServer(diffs) {
+    // 后端返回的差额应用到previousOdds
+    if(!diffs || !diffs.length) return;
+    
+    // 重建previousOdds：当前赔率 - 差额 = 上一次赔率
+    matches.forEach(m => {
+      const diffInfo = diffs.find(d => d.id === m.id);
+      if(!diffInfo || !diffInfo.changed) {
+        // 无变化，保持当前作为快照
+        if(!previousOdds.has(m.id)) {
+          previousOdds.set(m.id, JSON.parse(JSON.stringify(m.odds)));
+        }
+        return;
+      }
+
+      // 从差额反推上一次赔率
+      const prevOdds = {};
+      POOLS.forEach(pool => {
+        if(!m.odds[pool]) return;
+        prevOdds[pool] = {};
+        getPoolKeys(pool).forEach(key => {
+          if(m.odds[pool][key] === undefined) return;
+          if(diffInfo.diffs && diffInfo.diffs[pool] && diffInfo.diffs[pool][key]) {
+            prevOdds[pool][key] = diffInfo.diffs[pool][key].old;
+          } else {
+            prevOdds[pool][key] = m.odds[pool][key];
+          }
+        });
+        prevOdds[pool].ut = m.odds[pool].ut;
+      });
+      previousOdds.set(m.id, prevOdds);
+    });
   }
 
   function parseMatches(value) {
     const list = value.matchInfoList;
-    if (!list || !Array.isArray(list)) return [];
-    let all = [];
-    list.forEach(day => { if (day.subMatchList) all = all.concat(day.subMatchList); });
-
-    return all.map((item, idx) => ({
-      id: String(item.matchId || idx),
-      home: item.homeTeamAllName || item.homeTeamAbbName || '主队',
-      away: item.awayTeamAllName || item.awayTeamAbbName || '客队',
-      homeRank: item.homeRank || '',
-      awayRank: item.awayRank || '',
-      time: (item.matchTime || '').substring(0, 5),
-      matchNum: item.matchNumStr || '',
-      league: item.leagueAbbName || '',
-      leagueCode: item.leagueCode || '',
+    if(!list||!Array.isArray(list)) return [];
+    let all=[];
+    list.forEach(day=>{ if(day.subMatchList) all=all.concat(day.subMatchList); });
+    return all.map((item,idx)=>({
+      id: String(item.matchId||idx),
+      home: item.homeTeamAllName||item.homeTeamAbbName||'主队',
+      away: item.awayTeamAllName||item.awayTeamAbbName||'客队',
+      homeRank: item.homeRank||'', awayRank: item.awayRank||'',
+      time: (item.matchTime||'').substring(0,5),
+      matchNum: item.matchNumStr||'', league: item.leagueAbbName||'', leagueCode: item.leagueCode||'',
       odds: {
-        had: pickOdds(item.had, ['h','d','a']),
-        hhad: item.hhad ? { ...pickOdds(item.hhad, ['h','d','a']), goalLine: item.hhad.goalLine||'', goalLineValue: item.hhad.goalLineValue||'' } : null,
-        crs: pickOdds(item.crs, CRS_KEYS_ALL),
-        ttg: pickOdds(item.ttg, ['s0','s1','s2','s3','s4','s5','s6','s7']),
-        hafu: pickOdds(item.hafu, ['hh','hd','ha','dh','dd','da','ah','ad','aa'])
+        had: pickOdds(item.had,['h','d','a']),
+        hhad: item.hhad?{...pickOdds(item.hhad,['h','d','a']),goalLine:item.hhad.goalLine||'',goalLineValue:item.hhad.goalLineValue||''}:null,
+        crs: pickOdds(item.crs,CRS_KEYS_ALL),
+        ttg: pickOdds(item.ttg,['s0','s1','s2','s3','s4','s5','s6','s7']),
+        hafu: pickOdds(item.hafu,['hh','hd','ha','dh','dd','da','ah','ad','aa'])
       }
-    })).filter(m => m.odds.had);
+    })).filter(m=>m.odds.had);
   }
 
-  function pickOdds(source, keys) {
-    if (!source) return null;
-    const result = {};
-    keys.forEach(k => { if (source[k] !== undefined) result[k] = parseFloat(source[k])||0; });
-    result.ut = (source.updateDate||'')+' '+(source.updateTime||'');
-    return Object.keys(result).length > 1 ? result : null;
+  function pickOdds(source,keys) {
+    if(!source) return null;
+    const r={};
+    keys.forEach(k=>{ if(source[k]!==undefined) r[k]=parseFloat(source[k])||0; });
+    r.ut=(source.updateDate||'')+' '+(source.updateTime||'');
+    return Object.keys(r).length>1?r:null;
   }
 
-  function getPoolKeys(pool) {
-    if (pool === 'had' || pool === 'hhad') return ['h','d','a'];
-    if (pool === 'hafu') return ['hh','hd','ha','dh','dd','da','ah','ad','aa'];
-    if (pool === 'ttg') return ['s0','s1','s2','s3','s4','s5','s6','s7'];
-    if (pool === 'crs') return CRS_KEYS_ALL;
-    return [];
+  function loadMockData() {
+    const teams=[
+      {h:'首尔FC',a:'浦项制铁',t:'18:30',l:'韩职',lc:'KD1',r1:'[韩职1]',r2:'[韩职5]',n:'周三201'},
+      {h:'富川FC',a:'安养FC',t:'18:30',l:'韩职',lc:'KD1',r1:'[韩职10]',r2:'[韩职7]',n:'周三202'},
+      {h:'光州FC',a:'金泉尚武',t:'18:30',l:'韩职',lc:'KD1',r1:'[韩职12]',r2:'[韩职11]',n:'周三203'},
+      {h:'奥莫尼亚',a:'阿拉木图',t:'01:00',l:'欧冠',lc:'UCL',r1:'',r2:'',n:'周三210'}
+    ];
+    matches=teams.map((t,i)=>({
+      id:'mock_'+i, home:t.h, away:t.a, homeRank:t.r1, awayRank:t.r2,
+      time:t.time, matchNum:t.n, league:t.l, leagueCode:t.lc,
+      odds:{ had:mockHAD(), hhad:mockHHAD(), crs:mockCRS(), ttg:mockTTG(), hafu:mockHAFU() }
+    }));
+    saveSnapshot();
   }
 
-  // ========== 局部更新 ==========
-  function updateMatchesInPlace(newMatches) {
-    const oldMap = new Map(matches.map(m => [m.id, m]));
-    newMatches.forEach(nm => {
-      const om = oldMap.get(nm.id);
-      if (!om) { matches.push(nm); appendMatchCard(nm); return; }
-      let changed = false;
-      POOLS.forEach(p => {
-        if (!nm.odds[p] || !om.odds[p]) return;
-        getPoolKeys(p).forEach(k => {
-          if (nm.odds[p][k] !== undefined && nm.odds[p][k] !== om.odds[p][k]) changed = true;
-        });
-      });
-      if (changed) { om.odds = nm.odds; updateMatchCardDOM(om); }
-    });
-    const newIds = new Set(newMatches.map(m => m.id));
-    matches = matches.filter(m => { if (!newIds.has(m.id)) { removeMatchCard(m.id); return false; } return true; });
-  }
+  function mockHAD(){ return {h:+(1.5+Math.random()*3).toFixed(2),d:+(2.5+Math.random()*2).toFixed(2),a:+(2+Math.random()*4).toFixed(2),ut:new Date().toLocaleString('zh-CN')}; }
+  function mockHHAD(){ const gl=Math.random()>0.5?'-1':'+1'; return {h:+(2+Math.random()*3).toFixed(2),d:+(3+Math.random()*2).toFixed(2),a:+(1.5+Math.random()*3).toFixed(2),goalLine:gl,goalLineValue:gl+'.00',ut:new Date().toLocaleString('zh-CN')}; }
+  function mockCRS(){ const r={}; CRS_KEYS_ALL.forEach(k=>{r[k]=+(3+Math.random()*50).toFixed(2)}); r.ut=new Date().toLocaleString('zh-CN'); return r; }
+  function mockTTG(){ const r={}; for(let i=0;i<=7;i++) r['s'+i]=+(2+Math.random()*20).toFixed(2); r.ut=new Date().toLocaleString('zh-CN'); return r; }
+  function mockHAFU(){ const r={}; ['hh','hd','ha','dh','dd','da','ah','ad','aa'].forEach(k=>{r[k]=+(2+Math.random()*30).toFixed(2)}); r.ut=new Date().toLocaleString('zh-CN'); return r; }
 
-  function updateMatchCardDOM(match) {
-    POOLS.forEach(pool => {
-      if (!match.odds[pool]) return;
-      getPoolKeys(pool).forEach(key => {
-        const val = match.odds[pool][key];
-        if (val === undefined) return;
-        const valEl = document.getElementById(`odd-${match.id}-${pool}-${key}`);
-        const diffEl = document.getElementById(`diff-${match.id}-${pool}-${key}`);
-        if (valEl && valEl.textContent !== val.toFixed(2)) {
-          valEl.textContent = val.toFixed(2);
-          valEl.classList.remove('changed'); void valEl.offsetWidth; valEl.classList.add('changed');
-        }
-        if (diffEl) {
-          const diff = getDiff(match.id, pool, key);
-          const t = fmtDiff(diff), c = 'diff-tag ' + diffCls(diff) + ' new-change';
-          if (diffEl.textContent !== t || diffEl.className !== c) { diffEl.textContent = t; diffEl.className = c; }
-        }
-      });
-      const utEl = document.getElementById(`ut-${match.id}-${pool}`);
-      if (utEl && match.odds[pool].ut) utEl.textContent = '更新：' + match.odds[pool].ut;
-    });
-    const card = document.getElementById('card-' + match.id);
-    if (card) { card.classList.add('updated'); setTimeout(() => card.classList.remove('updated'), 1500); }
-  }
-
-  function appendMatchCard(match) {
-    const container = document.getElementById('matchesContainer');
-    const div = document.createElement('div');
-    div.innerHTML = buildMatchCardHTML(match, matches.indexOf(match));
-    container.appendChild(div.firstElementChild);
-  }
-
-  function removeMatchCard(matchId) {
-    const card = document.getElementById('card-' + matchId);
-    if (card) { card.style.opacity = '0'; card.style.transform = 'translateX(-20px)'; card.style.transition = '0.3s'; setTimeout(() => card.remove(), 300); }
-  }
-
-  // ========== 快照与差额 ==========
+  // ========== 快照与差额（本地计算） ==========
   function saveSnapshot() {
     previousOdds.clear();
-    matches.forEach(m => {
-      const snap = {};
-      POOLS.forEach(p => { if (m.odds[p]) snap[p] = JSON.parse(JSON.stringify(m.odds[p])); });
-      previousOdds.set(m.id, snap);
+    matches.forEach(m=>{
+      const snap={};
+      POOLS.forEach(p=>{ if(m.odds[p]) snap[p]=JSON.parse(JSON.stringify(m.odds[p])); });
+      previousOdds.set(m.id,snap);
     });
   }
 
   function getDiff(matchId, pool, key) {
-    const prev = previousOdds.get(matchId);
-    if (!prev || !prev[pool] || prev[pool][key] === undefined) return 0;
-    const match = matches.find(m => m.id === matchId);
-    return match?.odds[pool]?.[key] !== undefined ? (match.odds[pool][key] - prev[pool][key]) : 0;
+    const prev=previousOdds.get(matchId);
+    if(!prev||!prev[pool]||prev[pool][key]===undefined) return 0;
+    const match=matches.find(m=>m.id===matchId);
+    return match?.odds[pool]?.[key]!==undefined?(match.odds[pool][key]-prev[pool][key]):0;
   }
 
-  function fmtDiff(v) { return Math.abs(v) < 0.005 ? '0.00' : (v > 0 ? '+' : '') + v.toFixed(2); }
-  function diffCls(v) { return v > 0.005 ? 'diff-up' : (v < -0.005 ? 'diff-down' : 'diff-zero'); }
-  function getToday() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+  function fmtDiff(v){ return Math.abs(v)<0.005?'0.00':(v>0?'+':'')+v.toFixed(2); }
+  function diffCls(v){ return v>0.005?'diff-up':(v<-0.005?'diff-down':'diff-zero'); }
 
   // ========== 渲染 ==========
   function renderMatches() {
-    const container = document.getElementById('matchesContainer');
-    if (!matches.length) { container.innerHTML = '<div class="no-data">暂无比赛</div>'; return; }
-    container.innerHTML = matches.map((m, i) => buildMatchCardHTML(m, i)).join('');
+    const c=document.getElementById('matchesContainer');
+    if(!matches.length){ c.innerHTML='<div class="no-data">暂无比赛</div>'; return; }
+    c.innerHTML=matches.map(m=>buildMatchCardHTML(m)).join('');
   }
 
-  function buildMatchCardHTML(m, idx) {
-    return `
-      <div class="match-card" id="card-${m.id}">
-        <div class="match-header" onclick="togglePool('${m.id}')">
-          <span class="expand-icon" id="icon-${m.id}">▶</span>
-          <span class="league-tag league-${m.leagueCode}">${m.league}</span>
-          <span class="teams">${m.home} <span class="team-rank">${m.homeRank}</span> <span class="vs">VS</span> <span class="team-rank">${m.awayRank}</span> ${m.away}</span>
-          <span class="match-meta"><span class="match-time">🕒 ${m.time}</span><div class="match-num">#${m.matchNum}</div></span>
-        </div>
-        <div class="pools-panel" id="panel-${m.id}">
-          <div class="pool-tabs">
-            ${POOLS.filter(p => m.odds[p]).map((p, pi) => `<button class="pool-tab ${pi===0?'active':''}" onclick="switchPool(event,'${m.id}','${p}')">${POOL_ICONS[p]} ${POOL_NAMES[p]}</button>`).join('')}
-          </div>
-          ${POOLS.filter(p => m.odds[p]).map((p, pi) => `<div class="pool-content ${pi===0?'active':''}" id="content-${m.id}-${p}">${buildPoolHTML(m, p)}</div>`).join('')}
-        </div>
-      </div>`;
+  function buildMatchCardHTML(m) {
+    return `<div class="match-card" id="card-${m.id}">
+      <div class="match-header" onclick="togglePool('${m.id}')">
+        <span class="expand-icon" id="icon-${m.id}">▶</span>
+        <span class="league-tag league-${m.leagueCode}">${m.league}</span>
+        <span class="teams">${m.home} <span class="team-rank">${m.homeRank}</span> <span class="vs">VS</span> <span class="team-rank">${m.awayRank}</span> ${m.away}</span>
+        <span class="match-meta"><span class="match-time">🕒 ${m.time}</span><div class="match-num">#${m.matchNum}</div></span>
+      </div>
+      <div class="pools-panel" id="panel-${m.id}">
+        <div class="pool-tabs">${POOLS.filter(p=>m.odds[p]).map((p,pi)=>`<button class="pool-tab ${pi===0?'active':''}" onclick="switchPool(event,'${m.id}','${p}')">${POOL_ICONS[p]} ${POOL_NAMES[p]}</button>`).join('')}</div>
+        ${POOLS.filter(p=>m.odds[p]).map((p,pi)=>`<div class="pool-content ${pi===0?'active':''}" id="content-${m.id}-${p}">${buildPoolHTML(m,p)}</div>`).join('')}
+      </div></div>`;
   }
 
   function buildPoolHTML(m, pool) {
-    const odds = m.odds[pool];
-    if (!odds) return '<div class="no-data">暂无数据</div>';
-    let html = '';
-
-    // 让球信息
-    if (pool === 'hhad' && odds.goalLine) {
-      const glv = parseFloat(odds.goalLineValue) || 0;
-      const giveTeam = glv < 0 ? m.home : m.away;
-      const giveNum = Math.abs(glv) || 1;
-      html += `<div style="text-align:center;padding:4px;font-size:0.7rem;color:#92400e;font-weight:600;">${giveTeam} <span class="handicap-info">让${giveNum}球</span></div>`;
+    const odds=m.odds[pool]; if(!odds) return '<div class="no-data">暂无数据</div>';
+    let html='';
+    if(pool==='hhad'&&odds.goalLine){
+      const glv=parseFloat(odds.goalLineValue)||0, gt=glv<0?m.home:m.away, gn=Math.abs(glv)||1;
+      html+=`<div style="text-align:center;padding:4px;font-size:0.7rem;color:#92400e;font-weight:600;">${gt} <span class="handicap-info">让${gn}球</span></div>`;
     }
-
-    // 比分：分组展示
-    if (pool === 'crs') {
-      const groups = {
-        win: { title: '🏠 主胜', items: [] },
-        draw: { title: '🤝 平局', items: [] },
-        lose: { title: '🚀 客胜', items: [] },
-        other_win: { title: '✨ 胜其他', items: [] },
-        other_draw: { title: '✨ 平其他', items: [] },
-        other_lose: { title: '✨ 负其他', items: [] }
-      };
-
-      CRS_KEYS_ALL.forEach(key => {
-        if (odds[key] !== undefined) {
-          const group = getScoreGroup(key);
-          if (groups[group]) groups[group].items.push(key);
+    if(pool==='crs'){
+      const groups={win:{title:'🏠 主胜',items:[]},draw:{title:'🤝 平局',items:[]},lose:{title:'🚀 客胜',items:[]},other_win:{title:'✨ 胜其他',items:[]},other_draw:{title:'✨ 平其他',items:[]},other_lose:{title:'✨ 负其他',items:[]}};
+      CRS_KEYS_ALL.forEach(k=>{ if(odds[k]!==undefined){ const g=getScoreGroup(k); if(groups[g]) groups[g].items.push(k); } });
+      const ag=Object.entries(groups).filter(([_,g])=>g.items.length>0);
+      const total=ag.reduce((s,[_,g])=>s+g.items.length,0);
+      const cols=total<=12?3:(total<=20?4:5);
+      html+=`<div class="crs-grid" style="grid-template-columns:repeat(${cols},1fr);">`;
+      ag.forEach(([gk,group])=>{
+        if(group.title.startsWith('✨')){
+          group.items.forEach(k=>{ const diff=getDiff(m.id,pool,k);
+            html+=`<div class="crs-item"><span class="crs-score other">${getScoreLabel(k)}</span><span class="crs-val">${odds[k].toFixed(2)}</span><span class="crs-diff diff-tag ${diffCls(diff)}">${fmtDiff(diff)}</span></div>`; });
+        }else{
+          html+=`<div class="crs-section-title">${group.title}</div>`;
+          group.items.forEach(k=>{ const diff=getDiff(m.id,pool,k);
+            html+=`<div class="crs-item"><span class="crs-score">${getScoreLabel(k)}</span><span class="crs-val">${odds[k].toFixed(2)}</span><span class="crs-diff diff-tag ${diffCls(diff)}">${fmtDiff(diff)}</span></div>`; });
         }
       });
-
-      // 过滤掉空组
-      const activeGroups = Object.entries(groups).filter(([_, g]) => g.items.length > 0);
-
-      // 计算合适的列数
-      const totalItems = activeGroups.reduce((sum, [_, g]) => sum + g.items.length, 0);
-      const cols = totalItems <= 12 ? 3 : (totalItems <= 20 ? 4 : 5);
-
-      html += `<div class="crs-grid" style="grid-template-columns:repeat(${cols},1fr);">`;
-      activeGroups.forEach(([gkey, group]) => {
-        if (group.title.startsWith('✨')) {
-          // 特殊项：胜其他/平其他/负其他
-          group.items.forEach(key => {
-            const diff = getDiff(m.id, pool, key);
-            html += `<div class="crs-item">
-              <span class="crs-score other">${getScoreLabel(key)}</span>
-              <span class="crs-val" id="odd-${m.id}-${pool}-${key}">${odds[key].toFixed(2)}</span>
-              <span class="crs-diff diff-tag ${diffCls(diff)}" id="diff-${m.id}-${pool}-${key}">${fmtDiff(diff)}</span>
-            </div>`;
-          });
-        } else {
-          // 常规比分：添加分组标题
-          html += `<div class="crs-section-title">${group.title}</div>`;
-          group.items.forEach(key => {
-            const diff = getDiff(m.id, pool, key);
-            html += `<div class="crs-item">
-              <span class="crs-score">${getScoreLabel(key)}</span>
-              <span class="crs-val" id="odd-${m.id}-${pool}-${key}">${odds[key].toFixed(2)}</span>
-              <span class="crs-diff diff-tag ${diffCls(diff)}" id="diff-${m.id}-${pool}-${key}">${fmtDiff(diff)}</span>
-            </div>`;
-          });
-        }
-      });
-      html += '</div>';
-    } else {
-      // 其他玩法：表格
-      html += '<table class="odds-table"><tr><th>选项</th><th>赔率</th><th>差额</th></tr>';
-      const keys = getPoolKeys(pool);
-      const labels = pool === 'had' || pool === 'hhad' ? HAD_LABELS : (pool === 'hafu' ? HAFU_LABELS : TTG_LABELS);
-      keys.forEach(key => {
-        if (odds[key] !== undefined) {
-          const diff = getDiff(m.id, pool, key);
-          html += `<tr><td>${labels[key]||key}</td>
-            <td class="odd-val" id="odd-${m.id}-${pool}-${key}">${odds[key].toFixed(2)}</td>
-            <td><span class="diff-tag ${diffCls(diff)}" id="diff-${m.id}-${pool}-${key}">${fmtDiff(diff)}</span></td></tr>`;
-        }
-      });
-      html += '</table>';
+      html+='</div>';
+    }else{
+      html+='<table class="odds-table"><tr><th>选项</th><th>赔率</th><th>差额</th></tr>';
+      const keys=getPoolKeys(pool);
+      const labels=pool==='had'||pool==='hhad'?HAD_LABELS:(pool==='hafu'?HAFU_LABELS:TTG_LABELS);
+      keys.forEach(k=>{ if(odds[k]!==undefined){ const diff=getDiff(m.id,pool,k);
+        html+=`<tr><td>${labels[k]||k}</td><td class="odd-val">${odds[k].toFixed(2)}</td><td><span class="diff-tag ${diffCls(diff)}">${fmtDiff(diff)}</span></td></tr>`; } });
+      html+='</table>';
     }
-
-    html += `<div style="font-size:0.6rem;color:#94a3b8;text-align:right;margin-top:4px;" id="ut-${m.id}-${pool}">更新：${odds.ut||''}</div>`;
+    html+=`<div style="font-size:0.6rem;color:#94a3b8;text-align:right;margin-top:4px;">更新：${odds.ut||''}</div>`;
     return html;
   }
 
-  // ========== 交互 ==========
-  window.togglePool = function(id) {
-    const panel = document.getElementById('panel-' + id);
-    const icon = document.getElementById('icon-' + id);
-    if (!panel || !icon) return;
-    panel.classList.toggle('open');
-    icon.classList.toggle('open');
-  };
-
-  window.switchPool = function(e, matchId, pool) {
-    e.stopPropagation();
-    const panel = document.getElementById('panel-' + matchId);
-    if (!panel) return;
-    panel.querySelectorAll('.pool-tab').forEach(t => t.classList.remove('active'));
-    e.target.classList.add('active');
-    panel.querySelectorAll('.pool-content').forEach(c => c.classList.remove('active'));
-    const content = document.getElementById('content-' + matchId + '-' + pool);
-    if (content) content.classList.add('active');
-  };
+  window.togglePool=function(id){ const p=document.getElementById('panel-'+id),ic=document.getElementById('icon-'+id); if(p&&ic){p.classList.toggle('open');ic.classList.toggle('open');} };
+  window.switchPool=function(e,mid,pool){ e.stopPropagation(); const p=document.getElementById('panel-'+mid); if(!p)return; p.querySelectorAll('.pool-tab').forEach(t=>t.classList.remove('active')); e.target.classList.add('active'); p.querySelectorAll('.pool-content').forEach(c=>c.classList.remove('active')); const ct=document.getElementById('content-'+mid+'-'+pool); if(ct)ct.classList.add('active'); };
 
   function simulateChange() {
-    if (!matches.length) return;
-    matches.forEach(m => {
-      const vary = () => (Math.random() * 0.2 - 0.08);
-      POOLS.forEach(pool => {
-        if (!m.odds[pool]) return;
-        getPoolKeys(pool).forEach(k => {
-          if (m.odds[pool][k] !== undefined) {
-            const scale = pool === 'crs' ? 5 : (pool === 'hafu' ? 2 : (pool === 'ttg' ? 1.5 : 1));
-            m.odds[pool][k] = Math.max(1.05, +(m.odds[pool][k] + vary() * scale).toFixed(2));
-          }
-        });
-      });
+    if(!matches.length) return;
+    matches.forEach(m=>{ const vary=()=>(Math.random()*0.2-0.08);
+      POOLS.forEach(pool=>{ if(!m.odds[pool])return; getPoolKeys(pool).forEach(k=>{ if(m.odds[pool][k]!==undefined){ const s=pool==='crs'?5:(pool==='hafu'?2:(pool==='ttg'?1.5:1)); m.odds[pool][k]=Math.max(1.05,+(m.odds[pool][k]+vary()*s).toFixed(2)); } }); });
     });
-    matches.forEach(m => updateMatchCardDOM(m));
+    // 模拟后发送到后端更新快照
+    sendCurrentToServer();
+    renderMatches();
     showToast('📊 已模拟赔率波动');
+  }
+
+  async function sendCurrentToServer() {
+    try {
+      await fetch('/api/compare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(matches.map(m=>({id:m.id,odds:m.odds})))
+      });
+    } catch(e) {}
   }
 
   function resetBaseline() {
     saveSnapshot();
-    matches.forEach(m => updateMatchCardDOM(m));
+    sendCurrentToServer();
+    renderMatches();
     showToast('🔄 差额基准已重置');
   }
 
   // ========== 初始化 ==========
-  document.getElementById('displayDate').textContent = '📅 ' + getToday();
-  fetchData();
+  document.getElementById('displayDate').textContent='📅 '+getToday();
+  fetchAndCompare();
   startCountdown();
-  document.querySelector('.header h1').addEventListener('dblclick', resetBaseline);
+  document.querySelector('.header h1').addEventListener('dblclick',resetBaseline);
 </script>
 </body>
 </html>
