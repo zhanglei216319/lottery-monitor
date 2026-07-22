@@ -3,575 +3,354 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>竞彩实时赔率 · 全时段历史监控</title>
+  <title>竞彩实时赔率 · 全时段监控</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; padding: 12px; }
-    .container { max-width: 1200px; margin: 0 auto; }
-
-    .header {
-      background: linear-gradient(135deg, #0b2b5e, #1a4a8b);
-      border-radius: 16px; padding: 14px 18px; margin-bottom: 12px;
-      color: #fff; box-shadow: 0 8px 24px rgba(11,43,94,0.25);
-      position: sticky; top: 10px; z-index: 100;
+    :root {
+      --bg: #f5f6fa; --card: #ffffff; --primary: #1a3a5c; --accent: #f0a500;
+      --text: #1e293b; --text-secondary: #64748b; --text-muted: #94a3b8;
+      --border: #e8ecf1; --red: #e53e3e; --red-bg: #fff5f5;
+      --green: #38a169; --green-bg: #f0fff4;
+      --blue: #2563eb; --blue-light: #eff6ff;
+      --radius: 14px; --radius-sm: 8px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.04); --transition: 0.25s;
     }
-    .header h1 { font-size: 1.1rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .header h1 span { background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 15px; font-size: 0.65rem; }
-    .info-bar { display: flex; justify-content: space-between; margin-top: 6px; flex-wrap: wrap; gap: 6px; font-size: 0.7rem; }
-    .date-badge { background: #ffd966; color: #0b2b5e; font-weight: 700; padding: 4px 12px; border-radius: 15px; }
-    .status-badge { background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 15px; display: flex; align-items: center; gap: 5px; }
-    .dot { width: 7px; height: 7px; border-radius: 50%; }
-    .dot-ok { background: #2ecc71; animation: pulse 1.6s infinite; }
-    .dot-err { background: #f59e0b; }
-    @keyframes pulse { 0%,100%{opacity:0.5;transform:scale(1)} 50%{opacity:1;transform:scale(1.5)} }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; min-height: 100vh; padding: 10px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .navbar { background: linear-gradient(135deg,#0f2640,#1a3a5c,#1e4d7a); border-radius:var(--radius); padding:14px 18px; margin-bottom:10px; color:#fff; box-shadow:0 6px 20px rgba(15,38,64,0.25); position:sticky; top:8px; z-index:100; }
+    .navbar-row { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+    .logo { display:flex; align-items:center; gap:6px; } .logo-icon { font-size:1.4rem; } .logo-text { font-size:1rem; font-weight:800; }
+    .logo-badge { background:var(--accent); color:#1a3a5c; padding:2px 8px; border-radius:12px; font-size:0.55rem; font-weight:800; }
+    .status-pill { display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.12); padding:5px 12px; border-radius:16px; font-size:0.65rem; }
+    .status-dot { width:6px; height:6px; border-radius:50%; } .status-dot.live { background:#48bb78; box-shadow:0 0 6px #48bb78; animation:glow 2s infinite; } .status-dot.offline { background:#f6ad55; }
+    @keyframes glow { 0%,100%{box-shadow:0 0 3px #48bb78} 50%{box-shadow:0 0 12px #48bb78} }
+    .source-tag { padding:2px 8px; border-radius:10px; font-weight:600; font-size:0.55rem; } .source-real { background:#c6f6d5; color:#276749; } .source-mock { background:#fefcbf; color:#975a16; }
+    .navbar-sub { display:flex; justify-content:space-between; margin-top:6px; font-size:0.6rem; opacity:0.85; flex-wrap:wrap; gap:4px; }
+    .action-bar { display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; align-items:center; }
+    .btn { padding:8px 14px; border-radius:18px; border:none; font-weight:600; font-size:0.7rem; cursor:pointer; display:flex; align-items:center; gap:4px; transition:var(--transition); white-space:nowrap; }
+    .btn-primary { background:var(--primary); color:#fff; box-shadow:0 3px 10px rgba(26,58,92,0.25); } .btn-primary:hover { background:#2d5f8a; transform:translateY(-1px); }
+    .btn-outline { background:#fff; color:var(--text); border:1.5px solid var(--border); } .btn-outline:hover { border-color:var(--primary); }
+    .btn:active { transform:scale(0.96); }
+    .legend { margin-left:auto; display:flex; gap:8px; background:#fff; padding:5px 10px; border-radius:16px; font-size:0.6rem; box-shadow:var(--shadow); }
+    .legend-up { color:var(--red); font-weight:700; } .legend-down { color:var(--green); font-weight:700; }
 
-    .controls { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
-    .btn { padding: 7px 14px; border-radius: 18px; border: 1px solid #d1d5db; background: #fff; font-weight: 600; font-size: 0.7rem; cursor: pointer; display: flex; align-items: center; gap: 3px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); transition: all 0.2s; }
-    .btn:hover { background: #eef2ff; border-color: #1a4a8b; }
-    .btn-primary { background: #0b2b5e; color: #fff; border: none; }
-    .btn:active { transform: scale(0.95); }
-    .legend { margin-left: auto; display: flex; gap: 8px; background: #fff; padding: 5px 10px; border-radius: 15px; font-size: 0.6rem; }
-    .up { color: #dc2626; font-weight: 700; } .down { color: #16a34a; font-weight: 700; }
+    .date-group-title { font-size:0.8rem; font-weight:800; color:var(--primary); padding:8px 14px; margin:4px 0; background:linear-gradient(135deg,#e8f0fe,#dbeafe); border-radius:10px; border-left:4px solid var(--blue); display:flex; align-items:center; gap:8px; }
+    .date-group-title .count { font-size:0.6rem; color:var(--text-muted); font-weight:400; }
 
-    .match-card { background: #fff; border-radius: 12px; margin-bottom: 8px; box-shadow: 0 3px 12px rgba(0,0,0,0.03); border: 1px solid #eef1f6; overflow: hidden; transition: border-color 0.5s; }
-    .match-card.flash-update { border-color: #f59e0b; }
-    .match-header { display: flex; align-items: center; padding: 10px 12px; gap: 8px; cursor: pointer; user-select: none; flex-wrap: wrap; }
-    .match-header:hover { background: #fafbfc; }
-    .expand-icon { font-size: 0.6rem; color: #94a3b8; transition: 0.3s; min-width: 12px; }
-    .expand-icon.open { transform: rotate(90deg); }
+    .match-list { display:flex; flex-direction:column; gap:8px; }
+    .match-card { background:#fff; border-radius:var(--radius); box-shadow:var(--shadow); border:1.5px solid var(--border); overflow:hidden; transition:all var(--transition); }
+    .match-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.07); } .match-card.flash { border-color:var(--accent); box-shadow:0 0 0 2px rgba(240,165,0,0.12); }
+    .match-bar { display:flex; align-items:center; padding:12px 14px; gap:6px; cursor:pointer; user-select:none; transition:background 0.2s; }
+    .match-bar:hover { background:#fafbfd; }
+    .expand-arrow { font-size:0.5rem; color:var(--text-muted); transition:transform var(--transition); width:14px; text-align:center; flex-shrink:0; }
+    .expand-arrow.open { transform:rotate(90deg); }
+    .league-badge { font-size:0.55rem; color:#fff; font-weight:700; padding:2px 7px; border-radius:4px; flex-shrink:0; min-width:32px; text-align:center; }
+    .l-KD1{background:#2563eb}.l-UCL{background:#7c3aed}.l-PL{background:#dc2626}.l-SA{background:#ea580c}.l-BL{background:#16a34a}.l-default{background:#64748b}
+    .match-main { flex:1; min-width:0; display:flex; align-items:center; gap:8px; }
+    .team { font-weight:700; font-size:0.85rem; color:var(--text); display:flex; align-items:center; gap:3px; }
+    .team-rank { font-size:0.5rem; color:var(--text-muted); font-weight:400; }
+    .vs-text { font-size:0.6rem; color:var(--text-muted); font-weight:500; margin:0 2px; }
 
-    .league-tag { font-size: 0.55rem; color: #fff; font-weight: 700; padding: 2px 7px; border-radius: 3px; white-space: nowrap; }
-    .league-KD1 { background: #2563eb; } .league-UCL { background: #7c3aed; }
-    .league-PL { background: #dc2626; } .league-SA { background: #ea580c; }
-    .league-BL { background: #16a34a; } .league-default { background: #64748b; }
+    .min-diff-center { display:flex; flex-direction:row; gap:10px; background:#f8fafc; border:1.5px solid var(--border); border-radius:10px; padding:8px 12px; flex-shrink:0; max-width:300px; overflow-x:auto; align-items:center; }
+    .min-diff-row { display:flex; align-items:center; gap:5px; font-size:0.65rem; white-space:nowrap; flex-shrink:0; }
+    .min-diff-row .md-icon { font-size:0.75rem; }
+    .min-diff-row .md-label { color:var(--blue); font-weight:800; font-size:0.95rem; }
+    .min-diff-row .md-value { font-weight:800; font-size:0.95rem; }
+    .min-diff-row.global-min { background:#fffbeb; padding:3px 6px; border-radius:5px; }
+    .md-up { color:var(--red); } .md-down { color:var(--green); } .md-zero { color:var(--text-muted); }
 
-    .teams { font-weight: 700; font-size: 0.8rem; flex: 1; min-width: 130px; }
-    .teams .vs { color: #94a3b8; margin: 0 3px; } .team-rank { font-size: 0.5rem; color: #94a3b8; }
-    .match-meta { text-align: right; font-size: 0.6rem; color: #64748b; }
-    .match-time { background: #eef2ff; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
-    .match-num { font-size: 0.5rem; color: #94a3b8; }
+    .match-info { text-align:right; flex-shrink:0; }
+    .kickoff-time { background:#eef2ff; color:var(--primary); padding:3px 8px; border-radius:10px; font-weight:700; font-size:0.7rem; white-space:nowrap; }
+    .match-no { font-size:0.5rem; color:var(--text-muted); margin-top:2px; }
 
-    .pools-panel { display: none; border-top: 1px solid #f1f5f9; background: #fafbfc; }
-    .pools-panel.open { display: block; }
-    .pool-tabs { display: flex; border-bottom: 2px solid #e2e8f0; overflow-x: auto; padding: 0 4px; }
-    .pool-tab { padding: 6px 8px; font-size: 0.6rem; font-weight: 600; color: #64748b; cursor: pointer; white-space: nowrap; border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: 0.2s; }
-    .pool-tab.active { color: #0b2b5e; border-bottom-color: #0b2b5e; }
-    .pool-tab:hover { color: #1a4a8b; }
+    .detail-panel { display:none; border-top:1px solid var(--border); background:#fafbfd; } .detail-panel.open { display:block; }
+    .play-tabs { display:flex; border-bottom:2px solid var(--border); overflow-x:auto; padding:0 6px; }
+    .play-tab { padding:8px 10px; font-size:0.65rem; font-weight:600; color:var(--text-secondary); cursor:pointer; white-space:nowrap; border:none; background:none; border-bottom:2px solid transparent; margin-bottom:-2px; transition:var(--transition); display:flex; align-items:center; gap:3px; }
+    .play-tab:hover { color:var(--blue); } .play-tab.active { color:var(--blue); border-bottom-color:var(--blue); }
+    .tab-count { font-size:0.5rem; color:var(--text-muted); background:#f1f5f9; padding:1px 5px; border-radius:6px; } .play-tab.active .tab-count { background:var(--blue-light); color:var(--blue); }
+    .play-content { display:none; padding:10px 14px; } .play-content.active { display:block; }
+    .section-label { font-size:0.7rem; font-weight:800; color:var(--blue); margin-bottom:6px; display:flex; align-items:center; gap:4px; padding-bottom:4px; border-bottom:2px solid var(--blue); }
+    .handicap-notice { text-align:center; padding:5px 10px; margin-bottom:8px; background:linear-gradient(135deg,#fefce8,#fffbeb); border-radius:6px; font-size:0.65rem; font-weight:700; color:#92400e; border:1px solid #fde68a; }
+    .handicap-notice span { background:#f59e0b; color:#fff; padding:1px 6px; border-radius:8px; font-size:0.6rem; }
 
-    .pool-content { display: none; padding: 8px 12px; }
-    .pool-content.active { display: block; }
+    .odds-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:8px; }
+    .odd-card { background:#fff; border-radius:var(--radius-sm); padding:10px 8px; text-align:center; border:1.5px solid var(--border); transition:var(--transition); }
+    .odd-card:hover { border-color:#cbd5e1; transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.05); }
+    .odd-card.min-highlight { border-color:var(--accent); background:#fffdf5; box-shadow:0 0 0 2px rgba(240,165,0,0.2); }
+    .odd-label { font-size:0.85rem; font-weight:800; color:var(--blue); margin-bottom:2px; letter-spacing:0.5px; }
+    .odd-value { font-size:1.35rem; font-weight:700; color:var(--text); line-height:1.2; transition:all 0.3s; }
+    .odd-diff { font-size:0.95rem; font-weight:800; margin-top:3px; padding:3px 12px; border-radius:10px; display:inline-block; }
+    .diff-up { color:var(--red); background:var(--red-bg); } .diff-down { color:var(--green); background:var(--green-bg); } .diff-same { color:var(--text-muted); }
+    .min-diff-hint { font-size:0.6rem; font-weight:700; margin-top:2px; }
 
-    .odds-table { width: 100%; border-collapse: collapse; font-size: 0.65rem; margin-bottom: 6px; }
-    .odds-table th { background: #f1f5f9; padding: 4px 5px; text-align: center; font-weight: 600; color: #475569; font-size: 0.55rem; }
-    .odds-table td { padding: 4px 5px; text-align: center; border-bottom: 1px solid #f8fafc; transition: all 0.3s; }
-    .cur-val { font-weight: 700; font-size: 0.75rem; transition: all 0.3s; }
-    .cur-val.changed { animation: valPop 0.6s ease; }
-    @keyframes valPop { 0%{color:#f59e0b;transform:scale(1.2)} 100%{color:#0f172a;transform:scale(1)} }
-    .diff-badge { font-size: 0.5rem; font-weight: 700; padding: 1px 4px; border-radius: 6px; display: inline-block; min-width: 35px; transition: all 0.3s; }
-    .diff-badge.poped { animation: diffPop 0.5s ease; }
-    @keyframes diffPop { 0%{transform:scale(1.5);opacity:0.5} 100%{transform:scale(1);opacity:1} }
-    .diff-up { color: #dc2626; background: #fef2f2; } .diff-down { color: #16a34a; background: #f0fdf4; } .diff-zero { color: #94a3b8; }
+    .crs-section { margin-bottom:8px; }
+    .crs-group-title { font-size:0.6rem; font-weight:800; color:var(--blue); padding:3px 0 1px; margin-bottom:2px; border-bottom:1px dashed var(--border); display:flex; align-items:center; gap:3px; }
+    .crs-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(95px,1fr)); gap:3px; }
+    .crs-card { display:flex; align-items:center; justify-content:space-between; padding:4px 6px; background:#fff; border-radius:5px; border:1px solid var(--border); font-size:0.6rem; gap:3px; }
+    .crs-card.min-highlight { border-color:var(--accent); background:#fffdf5; }
+    .crs-card .score { font-weight:800; color:var(--blue); min-width:28px; font-size:0.7rem; } .crs-card .score.other { color:#1d4ed8; font-size:0.65rem; }
+    .crs-card .val { font-weight:600; font-size:0.7rem; color:var(--text); }
+    .crs-card .diff { font-size:0.65rem; font-weight:800; padding:1px 4px; border-radius:3px; }
 
-    .crs-grid { display: grid; gap: 2px; padding: 3px 0; margin-bottom: 6px; }
-    .crs-item { display: flex; justify-content: space-between; align-items: center; padding: 2px 5px; background: #fff; border-radius: 4px; font-size: 0.6rem; border: 1px solid #f1f5f9; }
-    .crs-score { font-weight: 700; min-width: 28px; } .crs-score.other { color: #7c3aed; }
-    .crs-section-title { grid-column: 1/-1; font-size: 0.5rem; font-weight: 700; color: #64748b; padding: 2px 0 1px; border-bottom: 1px solid #e2e8f0; }
+    .history-wrap { max-height:280px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--radius-sm); background:#fff; }
+    .history-table { width:100%; border-collapse:collapse; font-size:0.6rem; }
+    .history-table th { background:#f8fafc; padding:5px 6px; text-align:center; font-weight:700; color:var(--blue); font-size:0.58rem; position:sticky; top:0; z-index:2; border-bottom:2px solid var(--border); }
+    .history-table td { padding:4px 5px; text-align:center; border-bottom:1px solid #f8fafc; }
+    .history-table tr:hover td { background:#fafbfd; }
+    .time-cell { color:var(--text-muted); font-size:0.55rem; white-space:nowrap; }
+    .val-up { color:var(--red); font-weight:700; } .val-down { color:var(--green); font-weight:700; }
+    .change-cell { font-size:0.55rem; text-align:left; font-weight:700; }
+    .min-highlight { background:#fffbeb !important; font-weight:800; }
 
-    .full-history-wrap { max-height: 350px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px; }
-    .full-history-table { width: 100%; border-collapse: collapse; font-size: 0.6rem; }
-    .full-history-table th { background: #f8fafc; padding: 4px 6px; text-align: center; font-weight: 600; color: #475569; font-size: 0.55rem; position: sticky; top: 0; z-index: 1; border-bottom: 2px solid #e2e8f0; }
-    .full-history-table td { padding: 3px 5px; text-align: center; border-bottom: 1px solid #f1f5f9; }
-    .full-history-table tr:hover td { background: #fafbfc; }
-    .time-col { color: #64748b; font-size: 0.55rem; white-space: nowrap; min-width: 70px; }
+    .empty-state { text-align:center; padding:30px 20px; color:var(--text-muted); } .empty-state .icon { font-size:2.5rem; margin-bottom:8px; }
+    .toast { position:fixed; top:16px; left:50%; transform:translateX(-50%); background:#1e293b; color:#fff; padding:8px 18px; border-radius:20px; font-size:0.75rem; font-weight:600; z-index:9999; opacity:0; transition:opacity 0.3s; pointer-events:none; box-shadow:0 6px 16px rgba(0,0,0,0.3); } .toast.show { opacity:1; }
+    .footer-text { text-align:center; font-size:0.5rem; color:var(--text-muted); margin-top:8px; }
+    ::-webkit-scrollbar { width:3px; height:3px; } ::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:3px; }
 
-    .handicap-info { font-size: 0.5rem; background: #fefce8; padding: 1px 5px; border-radius: 6px; }
-    .section-title { font-size: 0.65rem; font-weight: 700; color: #0b2b5e; margin: 8px 0 4px; padding-bottom: 3px; border-bottom: 2px solid #0b2b5e; display: flex; align-items: center; gap: 4px; }
-    .no-data { text-align: center; padding: 15px; color: #94a3b8; font-size: 0.7rem; }
-    .footer-bar { text-align: center; font-size: 0.55rem; color: #94a3b8; margin-top: 8px; }
-    .record-count { font-size: 0.5rem; color: #94a3b8; margin-left: 4px; }
-    .source-tag { font-size: 0.5rem; padding: 2px 5px; border-radius: 6px; margin-left: 3px; }
-    .source-real { background: #dcfce7; color: #16a34a; } .source-mock { background: #fef3c7; color: #92400e; }
-    .refresh-progress { font-size: 0.55rem; color: #94a3b8; margin-left: 8px; }
-
-    @media (max-width: 600px) {
-      .match-header { padding: 8px 10px; } .teams { font-size: 0.7rem; }
-      .pool-tab { padding: 5px 6px; font-size: 0.55rem; } .crs-item { padding: 2px 3px; font-size: 0.55rem; }
+    @media(max-width:500px){
+      .odds-cards{gap:4px}.odd-card{padding:8px 5px}.odd-label{font-size:0.72rem}.odd-value{font-size:1.1rem}.odd-diff{font-size:0.8rem;padding:2px 8px}
+      .match-bar{padding:10px;gap:4px}.team{font-size:0.7rem}
+      .min-diff-center{max-width:200px;padding:5px 8px;gap:6px}.min-diff-row .md-label{font-size:0.78rem}.min-diff-row .md-value{font-size:0.78rem}
+      .crs-cards{grid-template-columns:repeat(auto-fill,minmax(75px,1fr))}
+      .date-group-title{font-size:0.7rem;padding:6px 10px;}
     }
   </style>
 </head>
 <body>
 <div class="container">
-  <div class="header">
-    <h1>⚽ 竞彩足球 · 实时赔率监控 <span>历史对比</span><span class="source-tag" id="sourceTag">等待数据</span></h1>
-    <div class="info-bar">
-      <div class="date-badge" id="displayDate">📅 加载中</div>
-      <div class="status-badge"><span class="dot dot-ok" id="dot"></span> <span id="statusText">就绪</span><span class="refresh-progress" id="refreshProgress"></span></div>
+  <nav class="navbar">
+    <div class="navbar-row">
+      <div class="logo"><span class="logo-icon">⚽</span><span class="logo-text">竞彩监控</span><span class="logo-badge">LIVE</span></div>
+      <div class="status-pill"><span class="status-dot live" id="statusDot"></span><span id="statusText">就绪</span><span class="source-tag source-mock" id="sourceTag">等待数据</span></div>
     </div>
+    <div class="navbar-sub"><span id="displayDate">📅 加载中</span><span id="refreshCountdown"></span></div>
+  </nav>
+  <div class="action-bar">
+    <button class="btn btn-primary" onclick="fetchAndSave()">🔍 获取最新赔率</button>
+    <button class="btn btn-outline" onclick="toggleAuto()" id="autoBtn">⏸️ 暂停自动</button>
+    <div class="legend"><span>🔴<span class="legend-up">涨</span></span><span>🟢<span class="legend-down">跌</span></span></div>
   </div>
-
-  <div class="controls">
-    <button class="btn btn-primary" onclick="fetchAndSave()">🌐 获取最新赔率</button>
-    <button class="btn" onclick="resetHistory()">🔄 重置历史</button>
-    <button class="btn" onclick="toggleAutoRefresh()" id="autoBtn">⏸️ 暂停自动</button>
-    <div class="legend"><span>🔴<span class="up">涨</span></span><span>🟢<span class="down">跌</span></span><span>⚪平</span></div>
+  <div class="match-list" id="matchesContainer">
+    <div class="empty-state"><div class="icon">📡</div><div>等待获取数据</div><div style="font-size:0.65rem;color:var(--text-muted);">点击上方按钮开始</div></div>
   </div>
-
-  <div id="matchesContainer"></div>
-  <div class="footer-bar">💡 浏览器请求API → 后端存储 → 局部刷新 | 红色涨🟢绿跌</div>
+  <div class="footer-text">数据来源：竞彩官网 · 每日凌晨自动清除 · 红色涨绿色跌 · ⭐为全局最小变化</div>
 </div>
+<div class="toast" id="toast"></div>
 
 <script>
-  const POOLS = ['had', 'hhad', 'crs', 'ttg', 'hafu'];
-  const POOL_NAMES = { had: '胜平负', hhad: '让球胜平负', crs: '比分', ttg: '总进球数', hafu: '半全场' };
-  const POOL_ICONS = { had: '⚽', hhad: '🎯', crs: '📊', ttg: '🔢', hafu: '⏱️' };
-  const HAD_LABELS = { h: '胜', d: '平', a: '负' };
-  const HAFU_LABELS = { hh: '胜胜', hd: '胜平', ha: '胜负', dh: '平胜', dd: '平平', da: '平负', ah: '负胜', ad: '负平', aa: '负负' };
-  const TTG_LABELS = { s0: '0球', s1: '1球', s2: '2球', s3: '3球', s4: '4球', s5: '5球', s6: '6球', s7: '7+' };
-  const CRS_KEYS = ['s00s00','s00s01','s00s02','s00s03','s00s04','s00s05','s01s00','s01s01','s01s02','s01s03','s01s04','s01s05','s02s00','s02s01','s02s02','s02s03','s02s04','s02s05','s03s00','s03s01','s03s02','s03s03','s04s00','s04s01','s04s02','s05s00','s05s01','s05s02','s1sh','s1sd','s1sa'];
-  const SCORE_MAP = {'s00s00':'0:0','s00s01':'0:1','s00s02':'0:2','s00s03':'0:3','s00s04':'0:4','s00s05':'0:5','s01s00':'1:0','s01s01':'1:1','s01s02':'1:2','s01s03':'1:3','s01s04':'1:4','s01s05':'1:5','s02s00':'2:0','s02s01':'2:1','s02s02':'2:2','s02s03':'2:3','s02s04':'2:4','s02s05':'2:5','s03s00':'3:0','s03s01':'3:1','s03s02':'3:2','s03s03':'3:3','s04s00':'4:0','s04s01':'4:1','s04s02':'4:2','s05s00':'5:0','s05s01':'5:1','s05s02':'5:2','s1sh':'胜其他','s1sd':'平其他','s1sa':'负其他'};
+(function() {
+  var POOLS = ['had','hhad','crs','ttg','hafu'];
+  var POOL_NAMES = { had:'胜平负',hhad:'让球胜平负',crs:'比分',ttg:'总进球数',hafu:'半全场' };
+  var POOL_ICONS = { had:'⚽',hhad:'🎯',crs:'📊',ttg:'🔢',hafu:'⏱️' };
+  var HAD_LABELS = { h:'主胜',d:'平局',a:'客胜' };
+  var HAFU_LABELS = { hh:'胜胜',hd:'胜平',ha:'胜负',dh:'平胜',dd:'平平',da:'平负',ah:'负胜',ad:'负平',aa:'负负' };
+  var TTG_LABELS = { s0:'0球',s1:'1球',s2:'2球',s3:'3球',s4:'4球',s5:'5球',s6:'6球',s7:'7+' };
+  var CRS_KEYS = ['s00s00','s00s01','s00s02','s00s03','s00s04','s00s05','s01s00','s01s01','s01s02','s01s03','s01s04','s01s05','s02s00','s02s01','s02s02','s02s03','s02s04','s02s05','s03s00','s03s01','s03s02','s03s03','s04s00','s04s01','s04s02','s05s00','s05s01','s05s02','s1sh','s1sd','s1sa'];
+  var SCORE_MAP = {'s00s00':'0:0','s00s01':'0:1','s00s02':'0:2','s00s03':'0:3','s00s04':'0:4','s00s05':'0:5','s01s00':'1:0','s01s01':'1:1','s01s02':'1:2','s01s03':'1:3','s01s04':'1:4','s01s05':'1:5','s02s00':'2:0','s02s01':'2:1','s02s02':'2:2','s02s03':'2:3','s02s04':'2:4','s02s05':'2:5','s03s00':'3:0','s03s01':'3:1','s03s02':'3:2','s03s03':'3:3','s04s00':'4:0','s04s01':'4:1','s04s02':'4:2','s05s00':'5:0','s05s01':'5:1','s05s02':'5:2','s1sh':'胜其他','s1sd':'平其他','s1sa':'负其他'};
 
-  let matchHistory = [];
-  let autoRefresh = true;
-  let refreshCountdown = 60;
-  let isFirstLoad = true;
+  var matchHistory=[], autoRefresh=true, countdown=60, firstLoad=true;
 
-  function getScoreGroup(k) {
-    if(k==='s1sh')return'other_win';if(k==='s1sd')return'other_draw';if(k==='s1sa')return'other_lose';
-    if(k==='s00s00')return'draw';
-    const r=k.match(/s(\d+)s(\d+)/);if(!r)return'other';
-    return+r[1]>+r[2]?'win':(+r[1]<+r[2]?'lose':'draw');
+  function getScoreGroup(k){
+    if(k==='s1sh')return'other_win'; if(k==='s1sd')return'other_draw'; if(k==='s1sa')return'other_lose';
+    if(k==='s00s00')return'draw'; var r=k.match(/s(\d+)s(\d+)/); if(!r)return'other';
+    return +r[1]>+r[2]?'win':(+r[1]<+r[2]?'lose':'draw');
   }
-  function getPoolKeys(p) {
-    if(p==='had'||p==='hhad')return['h','d','a'];
-    if(p==='hafu')return['hh','hd','ha','dh','dd','da','ah','ad','aa'];
-    if(p==='ttg')return['s0','s1','s2','s3','s4','s5','s6','s7'];
-    return CRS_KEYS;
+  function getPoolKeys(p){
+    if(p==='had'||p==='hhad')return['h','d','a']; if(p==='hafu')return['hh','hd','ha','dh','dd','da','ah','ad','aa'];
+    if(p==='ttg')return['s0','s1','s2','s3','s4','s5','s6','s7']; return CRS_KEYS;
   }
-  function getLeagueClass(c) { return {'KD1':'league-KD1','UCL':'league-UCL','PL':'league-PL','SA':'league-SA','BL':'league-BL'}[c]||'league-default'; }
-  function getToday() { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function leagueClass(c){var m={KD1:'KD1',UCL:'UCL',PL:'PL',SA:'SA',BL:'BL'}; return'l-'+(m[c]||'default');}
+  function getToday(){var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 
-  // ========== 自动刷新 ==========
-  function toggleAutoRefresh() {
-    autoRefresh = !autoRefresh;
-    document.getElementById('autoBtn').textContent = autoRefresh ? '⏸️ 暂停自动' : '▶️ 开启自动';
-    document.getElementById('refreshProgress').textContent = autoRefresh ? '' : '(已暂停)';
-    showToast(autoRefresh ? '✅ 自动刷新开启' : '⏸️ 自动刷新已暂停');
-  }
-
-  function startCountdown() {
-    refreshCountdown = 60;
-    updateCountdown();
-    clearInterval(window._cd);
-    window._cd = setInterval(() => {
-      refreshCountdown--;
-      updateCountdown();
-      if (refreshCountdown <= 0) {
-        refreshCountdown = 60;
-        if (autoRefresh) fetchAndSave(true);
-      }
-    }, 1000);
-  }
-
-  function updateCountdown() {
-    const el = document.getElementById('refreshProgress');
-    if (el && autoRefresh) el.textContent = `(${refreshCountdown}s)`;
-  }
-
-  // ========== 核心：获取数据 + 局部更新 ==========
-  async function fetchAndSave(silent = false) {
-    if (!silent) {
-      document.getElementById('statusText').textContent = '⏳ 请求中...';
-      document.getElementById('dot').className = 'dot dot-err';
-    }
-
-    let realData = false;
-    let newMatches = null;
-
-    // 浏览器请求竞彩API
-    try {
-      const resp = await fetch(
-        'https://webapi.sporttery.cn/gateway/uniform/football/getMatchCalculatorV1.qry?channel=c&_=' + Date.now(),
-        { headers: { 'Accept': 'application/json' } }
-      );
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data && data.success && data.value) {
-          newMatches = parseMatches(data.value);
-          realData = true;
-        }
-      }
-    } catch (e) {
-      console.warn('API请求失败:', e.message);
-    }
-
-    // 发送到后端
-    if (newMatches && newMatches.length > 0) {
-      try {
-        const resp = await fetch('/api/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ matches: newMatches })
-        });
-        const result = await resp.json();
-        if (result.success && result.history) {
-          // 局部更新！
-          updateMatchesInPlace(result.history);
-        }
-      } catch (e) {
-        console.error('后端保存失败:', e.message);
-        // 降级：完整重新加载
-        await loadFullHistory();
-        renderAllMatches();
-      }
-    } else if (!silent) {
-      await loadFullHistory();
-      renderAllMatches();
-    }
-
-    // 更新状态
-    document.getElementById('dot').className = 'dot dot-ok';
-    document.getElementById('statusText').textContent = realData ? '✅ 实时' : '⚠️ 离线';
-    document.getElementById('sourceTag').textContent = realData ? '实时' : '离线';
-    document.getElementById('sourceTag').className = 'source-tag ' + (realData ? 'source-real' : 'source-mock');
-    document.getElementById('displayDate').textContent = '📅 ' + getToday();
-    refreshCountdown = 60;
-  }
-
-  function parseMatches(value) {
-    const list = value.matchInfoList;
-    if (!list || !Array.isArray(list)) return [];
-    let all = [];
-    list.forEach(day => { if (day.subMatchList) all = all.concat(day.subMatchList); });
-
-    return all.map(item => {
-      const odds = {};
-      if (item.had) odds.had = { h: +item.had.h||0, d: +item.had.d||0, a: +item.had.a||0 };
-      if (item.hhad) odds.hhad = { h: +item.hhad.h||0, d: +item.hhad.d||0, a: +item.hhad.a||0 };
-      if (item.crs) { odds.crs = {}; CRS_KEYS.forEach(k => { if (item.crs[k] !== undefined) odds.crs[k] = +item.crs[k]||0; }); }
-      if (item.ttg) { odds.ttg = {}; for (let i=0;i<=7;i++) if (item.ttg['s'+i] !== undefined) odds.ttg['s'+i] = +item.ttg['s'+i]||0; }
-      if (item.hafu) { odds.hafu = {}; ['hh','hd','ha','dh','dd','da','ah','ad','aa'].forEach(k => { if (item.hafu[k] !== undefined) odds.hafu[k] = +item.hafu[k]||0; }); }
-      return {
-        id: String(item.matchId),
-        home: item.homeTeamAllName || item.homeTeamAbbName || '',
-        away: item.awayTeamAllName || item.awayTeamAbbName || '',
-        homeRank: item.homeRank || '', awayRank: item.awayRank || '',
-        time: (item.matchTime || '').substring(0, 5),
-        matchNum: item.matchNumStr || '',
-        league: item.leagueAbbName || '', leagueAllName: item.leagueAllName || '',
-        leagueCode: item.leagueCode || '',
-        hhadGoalLine: item.hhad?.goalLine || '', hhadGoalLineValue: item.hhad?.goalLineValue || '',
-        odds
-      };
-    }).filter(m => m.odds.had);
-  }
-
-  // ========== 局部更新核心逻辑 ==========
-  function updateMatchesInPlace(newHistory) {
-    if (!newHistory || !newHistory.length) return;
-
-    const oldMap = new Map(matchHistory.map(m => [m.matchId, m]));
-    let hasChanges = false;
-
-    newHistory.forEach(nh => {
-      const old = oldMap.get(nh.matchId);
-      if (!old) {
-        // 新比赛：追加到DOM
-        matchHistory.push(nh);
-        appendMatchCard(nh);
-        hasChanges = true;
-        return;
-      }
-
-      // 更新内存数据
-      old.info = nh.info;
-      let matchChanged = false;
-
-      POOLS.forEach(pool => {
-        const newRecords = nh[pool] || [];
-        const oldRecords = old[pool] || [];
-        
-        if (newRecords.length !== oldRecords.length) {
-          old[pool] = newRecords;
-          matchChanged = true;
-        } else if (newRecords.length > 0) {
-          // 检查最新记录是否变化
-          const newFirst = newRecords[0];
-          const oldFirst = oldRecords[0];
-          if (newFirst._time !== oldFirst._time || newFirst._timestamp !== oldFirst._timestamp) {
-            old[pool] = newRecords;
-            matchChanged = true;
-          }
-        }
-      });
-
-      if (matchChanged) {
-        // 局部更新DOM
-        updateMatchCardDOM(nh.matchId, nh);
-        hasChanges = true;
-      }
-    });
-
-    // 移除已不存在的比赛
-    const newIds = new Set(newHistory.map(m => m.matchId));
-    matchHistory = matchHistory.filter(m => {
-      if (!newIds.has(m.matchId)) {
-        removeMatchCardDOM(m.matchId);
-        return false;
-      }
-      return true;
-    });
-
-    if (!isFirstLoad && hasChanges) {
-      showToast('📊 赔率已更新', 1500);
-    }
-    isFirstLoad = false;
-  }
-
-  // ========== DOM局部更新 ==========
-  function updateMatchCardDOM(matchId, newData) {
-    const card = document.getElementById('card-' + matchId);
-    if (!card) return;
-
-    // 更新每个玩法的内容
-    POOLS.forEach(pool => {
-      const content = document.getElementById('content-' + matchId + '-' + pool);
-      if (!content) return;
-
-      const records = newData[pool] || [];
-      if (!records.length) return;
-
-      // 重建该玩法内容
-      content.innerHTML = buildPoolContentInner(newData, pool, newData.info);
-    });
-
-    // 更新记录数
-    POOLS.forEach(pool => {
-      const tab = document.querySelector(`#panel-${matchId} .pool-tab[data-pool="${pool}"]`);
-      if (tab) {
-        const count = tab.querySelector('.record-count');
-        if (count) count.textContent = `(${(newData[pool]||[]).length})`;
-      }
-    });
-
-    // 闪烁边框
-    card.classList.add('flash-update');
-    setTimeout(() => card.classList.remove('flash-update'), 1500);
-  }
-
-  function appendMatchCard(data) {
-    const container = document.getElementById('matchesContainer');
-    const div = document.createElement('div');
-    div.innerHTML = buildMatchCardHTML(data);
-    container.appendChild(div.firstElementChild);
-  }
-
-  function removeMatchCardDOM(matchId) {
-    const card = document.getElementById('card-' + matchId);
-    if (card) {
-      card.style.opacity = '0';
-      card.style.transform = 'translateX(-20px)';
-      card.style.transition = '0.3s';
-      setTimeout(() => card.remove(), 300);
-    }
-  }
-
-  async function loadFullHistory() {
-    try {
-      const resp = await fetch('/api/history?_=' + Date.now());
-      const result = await resp.json();
-      if (result.success) matchHistory = result.history || [];
-    } catch (e) {}
-  }
-
-  // ========== 完整渲染（首次加载） ==========
-  function renderAllMatches() {
-    const c = document.getElementById('matchesContainer');
-    if (!matchHistory.length) { c.innerHTML = '<div class="no-data">暂无数据，点击"获取最新赔率"开始</div>'; return; }
-    c.innerHTML = matchHistory.map(m => buildMatchCardHTML(m)).join('');
-  }
-
-  function buildMatchCardHTML(m) {
-    const info = m.info || {};
-    const leagueName = info.league || info.leagueAllName || '未知';
-    return `
-      <div class="match-card" id="card-${m.matchId}">
-        <div class="match-header" onclick="toggleMatch('${m.matchId}')">
-          <span class="expand-icon" id="icon-${m.matchId}">▶</span>
-          <span class="league-tag ${getLeagueClass(info.leagueCode)}">${leagueName}</span>
-          <span class="teams">${info.home||'?'} <span class="team-rank">${info.homeRank||''}</span> <span class="vs">VS</span> <span class="team-rank">${info.awayRank||''}</span> ${info.away||'?'}</span>
-          <span class="match-meta"><span class="match-time">🕒 ${info.time||''}</span><div class="match-num">#${info.matchNum||''}</div></span>
-        </div>
-        <div class="pools-panel" id="panel-${m.matchId}">
-          <div class="pool-tabs">
-            ${POOLS.filter(p => m[p] && m[p].length > 0).map((p, pi) => `
-              <button class="pool-tab ${pi===0?'active':''}" data-pool="${p}" onclick="switchPool(event,'${m.matchId}','${p}')">${POOL_ICONS[p]} ${POOL_NAMES[p]}<span class="record-count">(${m[p].length})</span></button>
-            `).join('')}
-          </div>
-          ${POOLS.filter(p => m[p] && m[p].length > 0).map((p, pi) => `
-            <div class="pool-content ${pi===0?'active':''}" id="content-${m.matchId}-${p}">${buildPoolContentInner(m, p, info)}</div>
-          `).join('')}
-        </div>
-      </div>`;
-  }
-
-  function buildPoolContentInner(m, pool, info) {
-    const records = m[pool] || [];
-    if (!records.length) return '<div class="no-data">暂无数据</div>';
-    const current = records[0], previous = records.length > 1 ? records[1] : null;
-    let html = '';
-
-    if (pool === 'hhad' && info.hhadGoalLine) {
-      const glv = parseFloat(info.hhadGoalLineValue) || 0;
-      const gt = glv < 0 ? (info.home||'主队') : (info.away||'客队');
-      html += `<div style="text-align:center;padding:3px;font-size:0.6rem;color:#92400e;">${gt} <span class="handicap-info">让${Math.abs(glv)||1}球</span></div>`;
-    }
-
-    html += '<div class="section-title">📌 当前赔率 (vs上一时间)</div>';
-    if (pool === 'crs') {
-      html += buildCrsGrid(current, previous);
-    } else {
-      html += buildCurrentTable(current, previous, pool);
-    }
-
-    html += `<div class="section-title">📜 全时段记录 (共${records.length}次)</div>`;
-    if (pool === 'crs') {
-      html += buildCrsFullHistory(records);
-    } else {
-      html += buildFullHistory(records, pool);
-    }
-    return html;
-  }
-
-  // ========== 构建表格 ==========
-  function buildCurrentTable(cur, prev, pool) {
-    const keys = getPoolKeys(pool);
-    const labels = pool === 'had' || pool === 'hhad' ? HAD_LABELS : (pool === 'hafu' ? HAFU_LABELS : TTG_LABELS);
-    let h = '<table class="odds-table"><tr><th>选项</th><th>当前</th><th>上期</th><th>差额</th></tr>';
-    keys.forEach(k => {
-      if (cur[k] !== undefined) {
-        const d = prev && prev[k] !== undefined ? +(cur[k] - prev[k]).toFixed(2) : null;
-        const ds = d !== null ? (d > 0 ? '+' + d.toFixed(2) : d.toFixed(2)) : '首次';
-        const dc = d !== null ? (d > 0.005 ? 'diff-up' : (d < -0.005 ? 'diff-down' : 'diff-zero')) : 'diff-zero';
-        h += `<tr><td>${labels[k]||k}</td><td class="cur-val">${cur[k].toFixed(2)}</td><td>${prev?.[k]?.toFixed(2)||'-'}</td><td><span class="diff-badge ${dc}">${ds}</span></td></tr>`;
-      }
-    });
-    return h + '</table>';
-  }
-
-  function buildCrsGrid(cur, prev) {
-    const groups = { win:{title:'🏠主胜',items:[]}, draw:{title:'🤝平局',items:[]}, lose:{title:'🚀客胜',items:[]}, other_win:{title:'✨胜其他',items:[]}, other_draw:{title:'✨平其他',items:[]}, other_lose:{title:'✨负其他',items:[]} };
-    CRS_KEYS.forEach(k => { if (cur[k] !== undefined) { const g = getScoreGroup(k); if (groups[g]) groups[g].items.push(k); } });
-    const ag = Object.entries(groups).filter(([_,g]) => g.items.length);
-    const total = ag.reduce((s,[_,g]) => s+g.items.length, 0);
-    const cols = total <= 12 ? 3 : (total <= 20 ? 4 : 5);
-    let h = `<div class="crs-grid" style="grid-template-columns:repeat(${cols},1fr);">`;
-    ag.forEach(([gk, group]) => {
-      if (!group.title.startsWith('✨')) h += `<div class="crs-section-title">${group.title}</div>`;
-      group.items.forEach(k => {
-        const d = prev && prev[k] !== undefined ? +(cur[k] - prev[k]).toFixed(2) : null;
-        const dc = d !== null ? (d > 0.005 ? 'diff-up' : (d < -0.005 ? 'diff-down' : 'diff-zero')) : 'diff-zero';
-        h += `<div class="crs-item"><span class="crs-score${group.title.startsWith('✨')?' other':''}">${SCORE_MAP[k]}</span><span style="font-weight:700;">${cur[k].toFixed(2)}</span><span class="diff-badge ${dc}" style="font-size:0.45rem;">${d!==null?(d>0?'+'+d.toFixed(2):d.toFixed(2)):'首次'}</span></div>`;
-      });
-    });
-    return h + '</div>';
-  }
-
-  function buildFullHistory(records, pool) {
-    if (records.length <= 1) return '<div class="no-data" style="padding:8px;">暂无更多历史</div>';
-    const keys = getPoolKeys(pool);
-    const labels = pool === 'had' || pool === 'hhad' ? HAD_LABELS : (pool === 'hafu' ? HAFU_LABELS : TTG_LABELS);
-    let h = '<div class="full-history-wrap"><table class="full-history-table"><tr><th class="time-col">时间</th>';
-    keys.forEach(k => h += `<th>${labels[k]||k}</th>`);
-    h += '<th>变化</th></tr>';
-    for (let i = 0; i < records.length; i++) {
-      const rec = records[i], prev = i < records.length - 1 ? records[i + 1] : null;
-      h += `<tr><td class="time-col">${rec._time||''}</td>`;
-      keys.forEach(k => {
-        const val = rec[k] !== undefined ? rec[k].toFixed(2) : '-';
-        const d = prev && rec[k] !== undefined && prev[k] !== undefined ? +(rec[k] - prev[k]).toFixed(2) : null;
-        const style = d !== null ? (d > 0.005 ? 'color:#dc2626;font-weight:700' : (d < -0.005 ? 'color:#16a34a;font-weight:700' : '')) : '';
-        h += `<td style="${style}">${val}</td>`;
-      });
-      let changes = '';
-      if (prev) {
-        const arr = [];
-        keys.forEach(k => {
-          const d = rec[k] !== undefined && prev[k] !== undefined ? +(rec[k] - prev[k]).toFixed(2) : null;
-          if (d !== null && Math.abs(d) > 0.005) arr.push(`<span style="color:${d>0?'#dc2626':'#16a34a'};font-size:0.45rem;">${labels[k]}${d>0?'▲+':''}${d}</span>`);
-        });
-        changes = arr.join(' ') || '<span style="color:#94a3b8;">-</span>';
-      } else { changes = '<span style="color:#94a3b8;">首次</span>'; }
-      h += `<td style="font-size:0.45rem;">${changes}</td></tr>`;
-    }
-    return h + '</table></div>';
-  }
-
-  function buildCrsFullHistory(records) {
-    if (records.length <= 1) return '<div class="no-data" style="padding:8px;">暂无更多历史</div>';
-    let h = '<div class="full-history-wrap"><table class="full-history-table"><tr><th class="time-col">时间</th><th>变化的比分</th></tr>';
-    for (let i = 0; i < records.length; i++) {
-      const rec = records[i], prev = i < records.length - 1 ? records[i + 1] : null;
-      h += `<tr><td class="time-col">${rec._time||''}</td><td style="text-align:left;font-size:0.5rem;">`;
-      if (prev) {
-        let arr = [];
-        CRS_KEYS.forEach(k => {
-          if (rec[k] !== undefined && prev[k] !== undefined) {
-            const d = +(rec[k] - prev[k]).toFixed(2);
-            if (Math.abs(d) > 0.005) arr.push(`<span style="color:${d>0?'#dc2626':'#16a34a'};">${SCORE_MAP[k]}:${rec[k].toFixed(2)} ${d>0?'▲+':''}${d}</span>`);
-          }
-        });
-        h += arr.length ? arr.join(' | ') : '<span style="color:#94a3b8;">无变化</span>';
-      } else { h += '<span style="color:#94a3b8;">首次记录</span>'; }
-      h += '</td></tr>';
-    }
-    return h + '</table></div>';
-  }
-
-  // ========== 交互 ==========
-  window.toggleMatch = function(id) {
-    const p = document.getElementById('panel-' + id), ic = document.getElementById('icon-' + id);
-    if (p && ic) { p.classList.toggle('open'); ic.classList.toggle('open'); }
-  };
-  window.switchPool = function(e, mid, pool) {
-    e.stopPropagation();
-    const panel = document.getElementById('panel-' + mid);
-    if (!panel) return;
-    panel.querySelectorAll('.pool-tab').forEach(t => t.classList.remove('active'));
-    e.target.classList.add('active');
-    panel.querySelectorAll('.pool-content').forEach(c => c.classList.remove('active'));
-    const ct = document.getElementById('content-' + mid + '-' + pool);
-    if (ct) ct.classList.add('active');
+  window.toggleAuto = function(){
+    autoRefresh=!autoRefresh; document.getElementById('autoBtn').textContent=autoRefresh?'⏸️ 暂停自动':'▶️ 开启自动';
+    toast(autoRefresh?'自动刷新已开启':'已暂停');
   };
 
-  async function resetHistory() {
-    if (!confirm('确定清除所有历史记录？')) return;
-    try {
-      await fetch('/api/reset', { method: 'POST' });
-      matchHistory = [];
-      document.getElementById('matchesContainer').innerHTML = '<div class="no-data">历史已清除，点击"获取最新赔率"重新开始</div>';
-      showToast('✅ 已清除');
-    } catch (e) {}
+  function startCountdown(){countdown=60;updateCd();clearInterval(window._cd);window._cd=setInterval(function(){countdown--;updateCd();if(countdown<=0){countdown=60;if(autoRefresh)fetchAndSave(true);}},1000);}
+  function updateCd(){var el=document.getElementById('refreshCountdown');if(el)el.textContent=autoRefresh?'⏱️ '+countdown+'秒后刷新':'⏸️ 已暂停';}
+
+  function calcMinDiff(records,pool){
+    if(!records||records.length<2)return{key:null,diff:null,label:'',absDiff:Infinity};
+    var keys=getPoolKeys(pool),minKey=null,minDiff=Infinity;
+    for(var i=0;i<records.length-1;i++){var cur=records[i],prev=records[i+1];for(var j=0;j<keys.length;j++){var k=keys[j];if(cur[k]!==undefined&&prev[k]!==undefined){var d=Math.abs(cur[k]-prev[k]);if(d>0.001&&d<minDiff){minDiff=d;minKey=k;}}}}
+    if(minKey===null)return{key:null,diff:null,label:'',absDiff:Infinity};
+    var latestDiff=null; if(records[0][minKey]!==undefined&&records[1]&&records[1][minKey]!==undefined){latestDiff=+(records[0][minKey]-records[1][minKey]).toFixed(2);}
+    var label=''; if(pool==='had'||pool==='hhad')label=HAD_LABELS[minKey]||minKey; else if(pool==='hafu')label=HAFU_LABELS[minKey]||minKey; else if(pool==='ttg')label=TTG_LABELS[minKey]||minKey; else if(pool==='crs')label=SCORE_MAP[minKey]||minKey;
+    return{key:minKey,diff:latestDiff,absDiff:+minDiff.toFixed(2),label:label};
   }
 
-  function showToast(msg, d=1800) {
-    let t = document.getElementById('toast');
-    if (!t) { t = document.createElement('div'); t.id = 'toast'; t.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:8px 20px;border-radius:20px;font-size:0.8rem;z-index:9999;transition:opacity 0.3s;pointer-events:none;'; document.body.appendChild(t); }
-    t.textContent = msg; t.style.opacity = '1'; clearTimeout(t._t); t._t = setTimeout(() => t.style.opacity = '0', d);
-  }
-
-  // ========== 初始化 ==========
-  document.getElementById('displayDate').textContent = '📅 ' + getToday();
-  (async () => {
-    await loadFullHistory();
-    if (matchHistory.length > 0) {
-      renderAllMatches();
-      document.getElementById('statusText').textContent = '✅ 已加载';
-      document.getElementById('sourceTag').textContent = '历史';
-      document.getElementById('sourceTag').className = 'source-tag source-mock';
+  function getAllMinDiffs(m){
+    var results=[];
+    for(var pi=0;pi<POOLS.length;pi++){
+      var pool=POOLS[pi];var records=m[pool]||[];if(records.length<2)continue;
+      var minInfo=calcMinDiff(records,pool);
+      if(minInfo.key===null||minInfo.diff===null||Math.abs(minInfo.diff)<0.005)continue;
+      minInfo.pool=pool;results.push(minInfo);
     }
-    fetchAndSave(true);
-  })();
+    if(!results.length)return[];
+    var globalMin=Infinity;
+    for(var i=0;i<results.length;i++){if(results[i].absDiff<globalMin)globalMin=results[i].absDiff;}
+    for(var i=0;i<results.length;i++){results[i].isGlobalMin=(results[i].absDiff===globalMin);}
+    return results;
+  }
+
+  function formatDateLabel(dateStr){
+    if(!dateStr||dateStr==='未知日期')return'📅 未知日期';
+    var parts=dateStr.split('-');
+    if(parts.length===3){
+      return'📅 '+parseInt(parts[1])+'月'+parseInt(parts[2])+'日';
+    }
+    return'📅 '+dateStr;
+  }
+
+  async function fetchAndSave(silent){
+    if(silent===undefined)silent=false;
+    if(!silent){document.getElementById('statusText').textContent='⏳ 获取列表...';document.getElementById('statusDot').className='status-dot offline';}
+    var newMatches=[];
+    try{
+      var listResp=await fetch('/api/matchlist?_='+Date.now());
+      var listData=await listResp.json();
+      if(listData.success&&listData.rawList&&listData.rawList.length){
+        var rawList=listData.rawList;
+        for(var i=0;i<rawList.length;i++){
+          var m=rawList[i]; var matchId=m.matchId;
+          if(!silent)document.getElementById('statusText').textContent='⏳ 获取 ('+(i+1)+'/'+rawList.length+') '+(m.homeTeamAbbName||'');
+          var odds={};
+          try{
+            var detailResp=await fetch('/api/match/'+matchId+'?_='+Date.now());
+            var detailData=await detailResp.json();
+            if(detailData.success&&detailData.data&&detailData.data.success&&detailData.data.value){
+              var v=detailData.data.value;
+              if(v.had)odds.had={h:+v.had.h||0,d:+v.had.d||0,a:+v.had.a||0};
+              if(v.hhad)odds.hhad={h:+v.hhad.h||0,d:+v.hhad.d||0,a:+v.hhad.a||0};
+              if(v.crs){odds.crs={};for(var j=0;j<CRS_KEYS.length;j++){var ck=CRS_KEYS[j];if(v.crs[ck]!==undefined)odds.crs[ck]=+v.crs[ck]||0;}}
+              if(v.ttg){odds.ttg={};for(var j=0;j<=7;j++){var sk='s'+j;if(v.ttg[sk]!==undefined)odds.ttg[sk]=+v.ttg[sk]||0;}}
+              if(v.hafu){odds.hafu={};var hk=['hh','hd','ha','dh','dd','da','ah','ad','aa'];for(var j=0;j<hk.length;j++){var kk=hk[j];if(v.hafu[kk]!==undefined)odds.hafu[kk]=+v.hafu[kk]||0;}}
+            }
+          }catch(e){}
+          if(!odds.had&&m.had)odds.had={h:+m.had.h||0,d:+m.had.d||0,a:+m.had.a||0};
+          if(!odds.hhad&&m.hhad)odds.hhad={h:+m.hhad.h||0,d:+m.hhad.d||0,a:+m.hhad.a||0};
+          if(!odds.crs&&m.crs){odds.crs={};for(var j=0;j<CRS_KEYS.length;j++){var ck=CRS_KEYS[j];if(m.crs[ck]!==undefined)odds.crs[ck]=+m.crs[ck]||0;}}
+          if(!odds.ttg&&m.ttg){odds.ttg={};for(var j=0;j<=7;j++){var sk='s'+j;if(m.ttg[sk]!==undefined)odds.ttg[sk]=+m.ttg[sk]||0;}}
+          if(!odds.hafu&&m.hafu){odds.hafu={};var hk=['hh','hd','ha','dh','dd','da','ah','ad','aa'];for(var j=0;j<hk.length;j++){var kk=hk[j];if(m.hafu[kk]!==undefined)odds.hafu[kk]=+m.hafu[kk]||0;}}
+          if(odds.had){newMatches.push({
+            id:String(matchId),home:m.homeTeamAllName||m.homeTeamAbbName||'',away:m.awayTeamAllName||m.awayTeamAbbName||'',
+            homeRank:m.homeRank||'',awayRank:m.awayRank||'',time:(m.matchTime||'').substring(0,5),
+            matchNum:m.matchNumStr||'',league:m.leagueAbbName||'',leagueAllName:m.leagueAllName||'',
+            leagueCode:m.leagueCode||'',matchDate:m.matchDate||m.businessDate||'',
+            hhadGoalLine:(m.hhad&&m.hhad.goalLine)||'',hhadGoalLineValue:(m.hhad&&m.hhad.goalLineValue)||'',odds:odds
+          });}
+        }
+      }
+    }catch(e){console.warn('失败:',e.message);}
+
+    if(newMatches&&newMatches.length){
+      try{
+        var r3=await fetch('/api/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({matches:newMatches})});
+        var d3=await r3.json();
+        if(d3.success&&d3.history)updateInPlace(d3.history);
+      }catch(e){await loadHistory();renderAll();}
+    }else if(!silent){await loadHistory();renderAll();}
+
+    document.getElementById('statusDot').className='status-dot live';
+    document.getElementById('statusText').textContent=newMatches.length?'✅ 实时 ('+newMatches.length+'场)':'⚠️ 无数据';
+    document.getElementById('sourceTag').textContent=newMatches.length?'实时数据':'离线';
+    document.getElementById('sourceTag').className='source-tag '+(newMatches.length?'source-real':'source-mock');
+    document.getElementById('displayDate').textContent='📅 '+getToday();countdown=60;
+  }
+  window.fetchAndSave=fetchAndSave;
+
+  function updateInPlace(newH){if(!newH||!newH.length)return;var oldM=new Map();for(var i=0;i<matchHistory.length;i++){oldM.set(matchHistory[i].matchId,matchHistory[i]);}var changed=false;
+    for(var i=0;i<newH.length;i++){var nh=newH[i],old=oldM.get(nh.matchId);if(!old){matchHistory.push(nh);appendCard(nh);changed=true;continue;}old.info=nh.info;var mc=false;
+      for(var pi=0;pi<POOLS.length;pi++){var p=POOLS[pi],nr=nh[p]||[],or=old[p]||[];if(nr.length!==or.length){old[p]=nr;mc=true;}else if(nr.length>0&&nr[0]._time!==or[0]._time){old[p]=nr;mc=true;}}
+      if(mc){updateCardDOM(nh.matchId,nh);changed=true;}}
+    var nids=new Set();for(var i=0;i<newH.length;i++){nids.add(newH[i].matchId);} matchHistory=matchHistory.filter(function(m){if(!nids.has(m.matchId)){removeCard(m.matchId);return false;}return true;});
+    if(!firstLoad&&changed)toast('📊 赔率已更新',1500); firstLoad=false;
+  }
+
+  function updateCardDOM(mid,data){var card=document.getElementById('card-'+mid);if(!card)return;var minEl=document.getElementById('mincenter-'+mid);if(minEl){minEl.innerHTML=buildMinCenter(getAllMinDiffs(data));}
+    for(var pi=0;pi<POOLS.length;pi++){var p=POOLS[pi],ct=document.getElementById('content-'+mid+'-'+p);if(!ct)continue;ct.innerHTML=buildPlayInner(data,p,data.info);}
+    card.classList.add('flash');setTimeout(function(){card.classList.remove('flash');},1500);}
+
+  function appendCard(data){var c=document.getElementById('matchesContainer'),d=document.createElement('div');d.innerHTML=buildCard(data);c.appendChild(d.firstElementChild);}
+  function removeCard(mid){var c=document.getElementById('card-'+mid);if(c){c.style.opacity='0';c.style.transform='translateY(-8px)';c.style.transition='0.3s';setTimeout(function(){c.remove();},300);}}
+  async function loadHistory(){try{var r=await fetch('/api/history?_='+Date.now());var d=await r.json();if(d.success)matchHistory=d.history||[];}catch(e){}}
+
+  function renderAll(){
+    var c=document.getElementById('matchesContainer');
+    if(!matchHistory.length){c.innerHTML='<div class="empty-state"><div class="icon">📡</div><div>暂无数据</div><div style="font-size:0.65rem;color:var(--text-muted);">点击获取最新赔率</div></div>';return;}
+    var groups={};
+    for(var i=0;i<matchHistory.length;i++){var m=matchHistory[i];var info=m.info||{};var date=info.matchDate||'未知日期';if(!groups[date])groups[date]=[];groups[date].push(m);}
+    var dates=Object.keys(groups).sort();
+    var h='';
+    for(var di=0;di<dates.length;di++){var date=dates[di];var list=groups[date];h+='<div class="date-group-title">'+formatDateLabel(date)+'<span class="count">'+list.length+'场</span></div>';for(var i=0;i<list.length;i++){h+=buildCard(list[i]);}}
+    c.innerHTML=h;
+  }
+
+  function buildMinCenter(diffs){
+    if(!diffs||!diffs.length)return'<span class="md-label" style="font-size:0.7rem;color:var(--text-muted);">暂无变化</span>';
+    var h='';
+    for(var i=0;i<diffs.length;i++){
+      var md=diffs[i];var cls=md.diff>0.005?'md-up':(md.diff<-0.005?'md-down':'md-zero');
+      var arrow=md.diff>0.005?'▲':(md.diff<-0.005?'▼':'');var sign=md.diff>0?'+':'';
+      h+='<span class="min-diff-row'+(md.isGlobalMin?' global-min':'')+'">';
+      h+='<span class="md-icon">'+POOL_ICONS[md.pool]+'</span>';
+      h+='<span class="md-label">'+md.label+'</span>';
+      h+='<span class="md-value '+cls+'">'+arrow+sign+md.diff.toFixed(2)+'</span>';
+      if(md.isGlobalMin)h+='<span style="font-size:0.55rem;">⭐</span>';
+      h+='</span>';
+    }
+    return h;
+  }
+
+  function buildCard(m){
+    var info=m.info||{},ln=info.league||info.leagueAllName||'未知',allDiffs=getAllMinDiffs(m);
+    var html='<div class="match-card" id="card-'+m.matchId+'"><div class="match-bar" onclick="toggleMatch(\''+m.matchId+'\')"><span class="expand-arrow" id="arrow-'+m.matchId+'">▶</span><span class="league-badge '+leagueClass(info.leagueCode)+'">'+ln+'</span><div class="match-main"><span class="team">'+(info.home||'?')+'<span class="team-rank">'+(info.homeRank||'')+'</span></span><span class="vs-text">VS</span><span class="team"><span class="team-rank">'+(info.awayRank||'')+'</span>'+(info.away||'?')+'</span></div><div class="min-diff-center" id="mincenter-'+m.matchId+'">'+buildMinCenter(allDiffs)+'</div><div class="match-info"><div class="kickoff-time">🕐 '+(info.time||'')+'</div><div class="match-no">#'+(info.matchNum||'')+'</div></div></div><div class="detail-panel" id="panel-'+m.matchId+'"><div class="play-tabs">';
+    var hasActive=false; for(var pi=0;pi<POOLS.length;pi++){var p=POOLS[pi];if(!m[p]||!m[p].length)continue;var isActive=!hasActive;if(isActive)hasActive=true;html+='<button class="play-tab'+(isActive?' active':'')+'" data-pool="'+p+'" onclick="switchPlay(event,\''+m.matchId+'\',\''+p+'\')">'+POOL_ICONS[p]+' '+POOL_NAMES[p]+'<span class="tab-count">'+m[p].length+'</span></button>';}
+    html+='</div>'; var firstContent=true; for(var pi=0;pi<POOLS.length;pi++){var p=POOLS[pi];if(!m[p]||!m[p].length)continue;html+='<div class="play-content'+(firstContent?' active':'')+'" id="content-'+m.matchId+'-'+p+'">'+buildPlayInner(m,p,info)+'</div>';firstContent=false;}
+    html+='</div></div>'; return html;
+  }
+
+  function buildPlayInner(m,pool,info){var recs=m[pool]||[];if(!recs.length)return'<div class="empty-state"><div>暂无数据</div></div>';var cur=recs[0],prev=recs.length>1?recs[1]:null,minInfo=calcMinDiff(recs,pool);var h='';
+    if(pool==='hhad'&&info.hhadGoalLine){var gv=parseFloat(info.hhadGoalLineValue)||0,gt=gv<0?(info.home||'主队'):(info.away||'客队');h+='<div class="handicap-notice">'+gt+' <span>让'+Math.abs(gv)+'球</span></div>';}
+    h+='<div class="section-label">📌 当前赔率'; if(minInfo.diff!==null&&Math.abs(minInfo.diff)>=0.005){var mc=minInfo.diff>0.005?'var(--red)':(minInfo.diff<-0.005?'var(--green)':'var(--text-muted)');h+=' <span style="font-size:0.55rem;font-weight:400;color:var(--text-muted);margin-left:8px;">最小变化: <span style="color:'+mc+';font-weight:700;">'+minInfo.label+' '+(minInfo.diff>0?'+':'')+minInfo.diff.toFixed(2)+'</span></span>';} h+='</div>';
+    if(pool==='crs')h+=buildCrsGrid(cur,prev,recs,minInfo); else h+=buildOddCards(cur,prev,pool,recs,minInfo);
+    h+='<div class="section-label">📜 历史记录 ('+recs.length+'次)</div>'; if(pool==='crs')h+=buildCrsHistory(recs,pool,minInfo); else h+=buildHistoryTable(recs,pool,minInfo); return h;
+  }
+
+  function buildOddCards(cur,prev,pool,recs,minInfo){var keys=getPoolKeys(pool),labels=pool==='had'||pool==='hhad'?HAD_LABELS:(pool==='hafu'?HAFU_LABELS:TTG_LABELS);var h='<div class="odds-cards">';
+    for(var i=0;i<keys.length;i++){var k=keys[i];if(cur[k]===undefined)continue;var d=prev&&prev[k]!==undefined?+(cur[k]-prev[k]).toFixed(2):null;var ds=d!==null?(d>0?'+'+d.toFixed(2):d.toFixed(2)):'新';var dc=d!==null?(d>0.005?'diff-up':(d<-0.005?'diff-down':'diff-same')):'diff-same';var isMin=minInfo.key===k&&Math.abs(minInfo.diff)>=0.005;
+      h+='<div class="odd-card'+(isMin?' min-highlight':'')+'"><div class="odd-label">'+(labels[k]||k)+(isMin?' ⭐':'')+'</div><div class="odd-value">'+cur[k].toFixed(2)+'</div><div class="odd-diff '+dc+'">'+ds+'</div>'+(isMin?'<div class="min-diff-hint"><span style="color:'+(d>0.005?'var(--red)':(d<-0.005?'var(--green)':'var(--text-muted)'))+';">最小变化</span></div>':'')+'</div>';}
+    return h+'</div>';}
+
+  function buildCrsGrid(cur,prev,recs,minInfo){var g={win:{t:'🏠 主胜',i:[]},draw:{t:'🤝 平局',i:[]},lose:{t:'🚀 客胜',i:[]},ow:{t:'✨ 胜其他',i:[]},od:{t:'✨ 平其他',i:[]},ol:{t:'✨ 负其他',i:[]}};
+    for(var i=0;i<CRS_KEYS.length;i++){var k=CRS_KEYS[i];if(cur[k]===undefined)continue;var gg=getScoreGroup(k);if(gg==='other_win')g.ow.i.push(k);else if(gg==='other_draw')g.od.i.push(k);else if(gg==='other_lose')g.ol.i.push(k);else if(g[gg])g[gg].i.push(k);}
+    var h='',gk=Object.keys(g); for(var gi=0;gi<gk.length;gi++){var gr=g[gk[gi]];if(!gr.i.length)continue;h+='<div class="crs-section"><div class="crs-group-title">'+gr.t+'</div><div class="crs-cards">';
+      for(var ii=0;ii<gr.i.length;ii++){var kk=gr.i[ii],d=prev&&prev[kk]!==undefined?+(cur[kk]-prev[kk]).toFixed(2):null,dc=d!==null?(d>0.005?'diff-up':(d<-0.005?'diff-down':'diff-same')):'diff-same',isMin=minInfo.key===kk&&Math.abs(minInfo.diff)>=0.005;
+        h+='<div class="crs-card'+(isMin?' min-highlight':'')+'"><span class="score'+(gr.t.indexOf('✨')===0?' other':'')+'">'+SCORE_MAP[kk]+'</span><span class="val">'+cur[kk].toFixed(2)+'</span><span class="diff '+dc+'">'+(d!==null?(d>0?'+'+d.toFixed(2):d.toFixed(2)):'新')+(isMin?' ⭐':'')+'</span></div>';}
+      h+='</div></div>';} return h;}
+
+  function buildHistoryTable(recs,pool,minInfo){if(recs.length<=1)return'<div class="empty-state" style="padding:12px;"><div>暂无更多历史</div></div>';var keys=getPoolKeys(pool),labels=pool==='had'||pool==='hhad'?HAD_LABELS:(pool==='hafu'?HAFU_LABELS:TTG_LABELS);var h='<div class="history-wrap"><table class="history-table"><tr><th>时间</th>';
+    for(var i=0;i<keys.length;i++){h+='<th>'+(labels[keys[i]]||keys[i])+'</th>';}h+='<th>变化</th></tr>';
+    for(var i=0;i<recs.length;i++){var r=recs[i],p=i<recs.length-1?recs[i+1]:null;h+='<tr><td class="time-cell">'+(r._time||'')+'</td>';
+      for(var j=0;j<keys.length;j++){var k=keys[j],v=r[k]!==undefined?r[k].toFixed(2):'-',d=p&&r[k]!==undefined&&p[k]!==undefined?+(r[k]-p[k]).toFixed(2):null,cls=d!==null?(d>0.005?'val-up':(d<-0.005?'val-down':'')):'',isMin=minInfo.key===k&&i===0&&p&&d!==null&&Math.abs(d)===minInfo.absDiff&&Math.abs(minInfo.diff)>=0.005;h+='<td class="'+cls+(isMin?' min-highlight':'')+'">'+v+(isMin?'⭐':'')+'</td>';}
+      var ch='';if(p){var a=[];for(var j=0;j<keys.length;j++){var k=keys[j],d=r[k]!==undefined&&p[k]!==undefined?+(r[k]-p[k]).toFixed(2):null;if(d!==null&&Math.abs(d)>0.005){a.push('<span style="color:'+(d>0?'var(--red)':'var(--green)')+';">'+labels[k]+(d>0?'▲+':'')+d+'</span>');}}ch=a.join(' ')||'<span style="color:var(--text-muted);">-</span>';}else ch='<span style="color:var(--text-muted);">首次</span>';
+      h+='<td class="change-cell">'+ch+'</td></tr>';} return h+'</table></div>';}
+
+  function buildCrsHistory(recs,pool,minInfo){if(recs.length<=1)return'<div class="empty-state" style="padding:12px;"><div>暂无更多历史</div></div>';var h='<div class="history-wrap" style="padding:6px;"><div style="display:flex;flex-direction:column;gap:2px;">';
+    for(var i=0;i<recs.length;i++){var r=recs[i],p=i<recs.length-1?recs[i+1]:null;h+='<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;background:#fff;border-radius:4px;font-size:0.55rem;border:1px solid #f8fafc;"><span style="color:var(--text-muted);min-width:55px;font-size:0.5rem;">'+(r._time||'')+'</span><span style="font-size:0.5rem;">';
+      if(p){var a=[];for(var j=0;j<CRS_KEYS.length;j++){var k=CRS_KEYS[j];if(r[k]!==undefined&&p[k]!==undefined){var d=+(r[k]-p[k]).toFixed(2);if(Math.abs(d)>0.005){var isMin=minInfo.key===k&&i===0&&Math.abs(d)===minInfo.absDiff&&Math.abs(minInfo.diff)>=0.005;a.push('<span style="color:'+(d>0?'var(--red)':'var(--green)')+';'+(isMin?'font-weight:800;background:#fffbeb;padding:1px 3px;border-radius:2px;':'')+'">'+SCORE_MAP[k]+':'+r[k].toFixed(2)+' '+(d>0?'▲+':'')+d+(isMin?'⭐':'')+'</span>');}}}h+=a.length?a.join(' | '):'<span style="color:var(--text-muted);">无变化</span>';}else h+='<span style="color:var(--text-muted);">首次记录</span>';
+      h+='</span></div>';} return h+'</div></div>';}
+
+  window.toggleMatch=function(id){var p=document.getElementById('panel-'+id),a=document.getElementById('arrow-'+id);if(p&&a){p.classList.toggle('open');a.classList.toggle('open');}};
+  window.switchPlay=function(e,mid,pool){e.stopPropagation();var p=document.getElementById('panel-'+mid);if(!p)return;var tabs=p.querySelectorAll('.play-tab');for(var i=0;i<tabs.length;i++){tabs[i].classList.remove('active');}e.target.classList.add('active');var contents=p.querySelectorAll('.play-content');for(var i=0;i<contents.length;i++){contents[i].classList.remove('active');}var ct=document.getElementById('content-'+mid+'-'+pool);if(ct)ct.classList.add('active');};
+  function toast(msg,d){if(d===undefined)d=1800;var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},d);}
+
+  document.getElementById('displayDate').textContent='📅 '+getToday();
+  (async function init(){await loadHistory();if(matchHistory.length){renderAll();document.getElementById('statusText').textContent='✅ 已加载';}fetchAndSave(true);})();
   startCountdown();
+})();
 </script>
 </body>
 </html>
